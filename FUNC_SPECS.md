@@ -20,7 +20,8 @@
 | 0.4 | | 10/15/2026 | Revised Sections 1.1 / 1.2 based on vision proposal | Emmett Oliver |
 | 0.5 | | 10/16/2026 | Updated Sections 1.2, 1.4, 2.7, 2.8 | Emmett Oliver |
 | 0.6 | | 10/18/2026 | Converted to Markdown. Fixed 1.4 definitions and engine naming. Updated 1.2 scope (4-player only, player trading, bot comparison, Colonist testing). Drafted 2.2–2.6, Section 3 and both appendices from team answers | Caleb Weisgerber |
-| 0.7 | | 10/19/2026 | Edited Items Brought Emett | Caleb Weisgerber |
+| 0.7 | | 10/19/2026 | Edited Items Brought By Emmett | Caleb Weisgerber |
+| 0.8 | | 10/20/2026 | Corrected typos, added user story to 2.2, reduced words in 2 & 3, synchronized formatting in 3.2 | Emmett Oliver |
 
 
 [OPEN] I-11: Does the instructor need to sign the "Approved By" column?
@@ -39,7 +40,7 @@
 
 ### 1.1 Purpose
 
-This document specifies the functional, interface, and behavioral requirements for Project Mayflower, a web-based game reviewer and practice platform for Settlers of Catan. Project Mayflower will draw similarties to Chess.com's Game Review/ board anylasis. Players upload recorded matches to determmine detrmine how to improve gameplay. Our tool will allow for the diagnose critical blunders, explore branching lines, and practice against AI opponents.
+This document specifies the functional, interface, and behavioral requirements for Project Mayflower, a web-based game reviewer and practice platform for Settlers of Catan. Project Mayflower will draw similarties to Chess.com's Game Review/ board anylasis. Players upload recorded matches to determine how to improve gameplay. Our tool will allow for the diagnose critical blunders, explore branching lines, and practice against AI opponents.
 
 This specification governs:
 - architectural decomposition;
@@ -57,7 +58,7 @@ The platform is a web-based teaching and analysis tool. It helps players analyze
 Project Mayflower works as a post-game review suite and a sparring engine:
 1. A client-side extension records match data from the player's own games on Colonist.io.
 2. The move stream is fed into our Game Engine.
-3. The system computes changes in win probability to give explainable feedback on actions taking in game.
+3. The system computes changes in win probability to give explainable feedback on actions taken in game.
 
 The platform targets **base-game, 4-player Catan only**, and includes **player-to-player trading** while respecting the hidden card of other players.
 
@@ -211,6 +212,55 @@ Project Mayflower has four classes of users and technical stakeholders, each wit
 
 [OPEN] I-8: confirm the fourth class (Administrators / Maintainers).
 
+#### Primary User Scenario: End-to-End Match Ingestion and Decision Review
+
+*   **Primary Actor:** Alex (Competitive / Ranked Colonist.io Player).
+*   **Goal:** Determine whether a loss was caused by poor  strategic decisions or unpreventable dice variance, and test alternative lines of play.
+*   **Preconditions:**
+    1. Alex has installed and enabled The Collector (read-only extension) on a Chromium-based desktop browser.
+    2. Alex has an active user account on the Project Mayflower web platform and is logged in.
+    3. The Mayflower web API, Redis task queue, and background simulation workers are running and healthy.
+
+#### Main Success Scenario
+1. **Match Recording:** Alex initiates a 4-player competitive match on Colonist.io. The Collector extension automatically detects active WebSocket match traffic and records game initialization, dice rolls, board layouts, building placements, and trades locally in memory.
+2. **Export & Session Completion:** Upon match conclusion, Alex opens The Collector popup (UI-01) and clicks "Export Session." The extension serializes the local event stream into a validated JSON file (`schema: colonist-session-collector/v1`) and downloads it to Alex's local disk.
+3. **Upload & Ingestion:** Alex navigates to the Project Mayflower web application and drops the exported JSON file onto the Recording Upload interface (UI-02).
+4. **Validation & Asynchronous Dispatch:** 
+   - The web API validates the file schema, board coordinates, and event continuity (FR-02) in $< 500\text{ ms}$ (NFR-05).
+   - The server pushes an evaluation job ticket containing initial board coordinates, seeds for rollouts exploration, and recorded move sequences onto the background Redis job queue.
+   - The UI displays an upload success state and transitions to an asynchronous processing indicator showing estimated queue completion time.
+5. **Replay & Stochastic Evaluation:**
+   - A background worker consumes the ticket and deterministically replays the match using the engine (FR-03).
+   - The worker executes rollout simulations across candidate opening vertices and mid-game decision branches, computing win-probability shifts (FR-05).
+   - Upon batch completion, the worker writes the move grades and summary diagnostics to the database.
+6. **Diagnostic Inspection (UI-04 & UI-05):**
+   - The web client receives the completion notification and renders the Move-by-Move Review interface (UI-05), featuring a turn-by-turn win-probability timeline and summary grade breakdown.
+   - Alex inspects Turn 0 (Initial Placement): The engine confirms Alex's first settlement was best ($+4.2\% \ \Delta\text{EV}$), but flags the second as nonoptimal ($-6.1\% \ \Delta\text{EV}$), noting later repercussions.
+   - Alex inspects Turn 18: The engine flags a trade proposal as a blunder($-14.8\% \ \Delta\text{EV}$), highlighting with a contextual tooltip how it inadvertently assisted the table leader.
+7. **Outcome:** Alex isolates the critical mistakes leading to the loss, confirms that dice rolls were within 1 standard deviation of expected distribution, and identifies specific trade valuation habits to adjust in future games.
+
+---
+
+#### Alternative Path A: Low-Confidence / Statistical Equivalence
+*   **Trigger:** At Turn 0, two top settlement vertices produce overlapping confidence intervals.
+*   **System Action:** Rather than arbitrarily labeling Vertex 22 an "Inaccuracy," the review engine flags both moves as Good / About Equal and displays an in-app statistical advisory callout (UI-04), explaining that the strategic value is statistically indistinguishable.
+
+---
+
+#### Alternative Path B: Counterfactual What-If Exploration (Phase 3 Sandbox)
+*   **Trigger:** Alex freezes the match at Turn 18 (the blunder trade) and explores an alternate option.
+*   **System Action:** Alex clicks "Branch from Turn" (UI-08). The engine clones the Turn 18 board state, applies an alternative action (holding cards and ending turn), and launches 500 fast-forward bot-vs-bot simulation rollouts. The UI displays a side-by-side comparative graph demonstrating that holding the resource preserved an estimated $24\%$ win probability compared to the $9\%$ resulting from the leader trade.
+
+---
+
+#### Failure Case 1: Corrupted or Incomplete Session Upload
+*   **Trigger:** The browser crashed mid-game, causing The Collector to miss turns, resulting in a gap marker in the JSON file.
+*   **System Response:** The Upload validator (FR-02) detects missing sequence IDs or incomplete state blocks. The UI rejects the full-game review, highlights the broken turn range, and displays an error message: *"Recording contains telemetry gaps between Turn 12 and 16. Full move-by-move review unavailable; turn-zero opening placement audit is still available."* Alex is provided an option to audit only the intact opening phase.
+
+#### Failure Case 2: Queue Timeout or Worker Node Failure
+*   **Trigger:** A background simulation worker encounters memory exhaustion or an unhandled engine exception during a heavy 500-rollout batch.
+*   **System Response:** The queue broker detects worker heartbeat loss or a job timeout ($> 30\text{ s}$). The job is automatically rescheduled once to an alternate worker. If the job fails repeatedly, the API updates the job status to `FAILED`, persists the error log, and updates the client UI: *"Analysis could not be completed due to a simulation timeout. The development team has been notified. Please retry in a few moments."*
+
 ### 2.3 Overview of Functional Requirements
 
 | Area | Capability | Phase |
@@ -235,7 +285,7 @@ Detailed requirements are in Section 3.2.
 
 | Data | Source | Stored Where | Notes |
 | --- | --- | --- | --- |
-| Raw Colonist recordings | Collector export (JSON) | On Server after user upload | Contains the recorder's own hand, other players' card **counts** only, public game logs, chat, and usernames |
+| Raw Colonist recordings | Collector export (JSON) | On Server after user upload | Contains the recorder's own hand, other players' card counts only, public game logs, chat, and usernames |
 | Parsed games and moves | Game Engine replay of recordings | Database | Includes game settings (friendly robber, dice mode, discard limit) |
 | Synthetic game datasets | Self-play and Arena | File/object storage | Large; versioned with the bot model that generated them |
 | Practice sessions | Practice mode | Database | Full move history, bot versions, and difficulty |
@@ -296,7 +346,7 @@ The design and implementation of Project Mayflower are bounded by technical, arc
 
 **Game Engine & State Representation**
 
-- **Game Engine:** The team will build its own headless Game Engine instead of using a third-party library. This gives us full control over simulation speed, state-copying overhead, and hidden-information modeling (unrevealed development cards and concealed hands) and licencing. 
+- **Game Engine:** The team will build its own headless Game Engine instead of using a third-party library. This gives us full control over simulation speed, state-copying overhead, hidden-information modeling (unrevealed development cards and concealed hands), and licencing. 
 - **Rule fidelity and settings:** The engine must implement base 4-player Catan rules, board layouts, turn sequences, player-to-player and maritime (bank) trades, and victory conditions. Rule variants that differ between Colonist games (e.g. friendly robber, dice mode, discard limit) must be configurable per game, so that recorded games replay under their own settings.
 - **Deterministic execution:**
   - Simulated games must be reproducible from an explicit random seed, for regression testing in CI/CD.
@@ -319,10 +369,10 @@ The design and implementation of Project Mayflower are bounded by technical, arc
 
 **Academic, Security & Software Engineering Hygiene**
 
-- **Course policy compliance:** The platform is a decision-support, game review, and analytical sparring tool. Commercial multiplayer lobbies, unmoderated human chat rooms, and cosmetic gaming incentives are excluded.
-- **Table talk and language models:** Bot communication is limited to structured game-state intents (e.g. trade offers, identifying the table leader, staying quiet). Open-ended conversational bots unrelated to the current game are out of scope.
+- **Course policy compliance:** Restricted to post-game decision support, match review, and local bot sparring; human-vs-human matchmaking, public lobbies, and unmoderated chat are prohibited.
+- **Table talk and language models:** Agent messaging is constrained to game-state intent schemas; unconstrained conversational NLP is prohibited.
 - **Branch protection and CI/CD:** No direct pushes to `main`. All code merges through Pull Requests that need at least one peer review and passing build, lint, and test checks.
-- **Secret management:** Database passwords, authentication keys, and external API tokens (including LLM provider keys) must never be committed to source control. They live in `.env` files listed in `.gitignore`.
+- **Secret management:** Credentials, database passwords, authentication keys, and external API tokens are prohibited from version control and must be loaded via `.gitignore`-protected `.env` files.
 
 ### 2.8 User Documentation
 
@@ -330,12 +380,9 @@ Project Mayflower will provide documentation for competitive players, casual lea
 
 **In-App Guidance & Tooltips**
 
-- **Collector installation and usage guide:** Step-by-step instructions in the web app for loading the unpacked Collector extension, recording a Colonist.io match, and exporting and uploading the file.
-- **Game review walkthrough:** An onboarding tour of the post-match review timeline and turn-by-turn evaluations. *(The branching portion arrives in Phase 3.)*
-- **Placement audit walkthrough:** A guided, dismissible tour showing how to set up a custom board, choose candidate placements, and run rollout audits.
-- **Metric definition tooltips:** Plain-language hover explanations of analytical terms, for players without a statistics background.
-- **Review label tooltips:** Hover definitions of review labels and analytical metrics.
-- **Statistical confidence notices:** Badges telling the user when two candidate moves are statistically too close to separate because of dice variance.
+- **Collector installation and usage guide:** Instructions within the web interface covering extension installation, match recording, and JSON export/upload procedures.
+- **Review Interface Tours:** Dismissible walkthroughs guiding users through initial board setup, candidate placement audits, and move-by-move timelines.
+- **Contextual Tooltips & Confidence Notices:** Hover definitions for evaluation taxonomy, analytical metrics, and statistical equivalence badges.
 
 **User Guide & Strategy Manual**
 
@@ -347,7 +394,7 @@ Project Mayflower will provide documentation for competitive players, casual lea
 **Technical & Operational Documentation**
 
 - **Repository `README.md` and setup runbooks:** Local installation and deployment: prerequisites, Docker Compose, and `.env` configuration.
-- **API documentation:** Generated OpenAPI (Swagger) documentation of all REST endpoints, request/response schemas, and job-status contracts.
+- **API documentation:** Generated OpenAPI (Swagger) documentation.
 - **Architecture and contribution guidelines (`CONTRIBUTING.md`):** Team engineering standards, branch protection rules, local pre-commit testing, worker task interfaces, and the definition of done.
 - **Arena and bot benchmarking guide (Phase 2/3):** Runbooks for running bot-vs-bot tournaments, computing Elo ratings, and benchmarking bots against external baselines.
 
@@ -401,20 +448,23 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 #### FR-01 Record a Colonist Game (Collector) *(Phase 1, built)*
 
 - **Purpose:** Capture the user's own Colonist game for later review.
-- **Inputs:** The user's active Colonist.io tab; Start/Stop actions in the popup.
+- **Inputs:** Active Colonist.io browser tab; popup start/stop triggers.
 - **Processing:**
-  - Attach the browser debugger to that tab only (HTTPS `colonist.io` and its subdomains).
+  - Attach debugger to active target tab.
   - Record WebSocket and HTTP game messages.
-  - Redact credentials found in URLs.
-  - Mark any gap caused by an unexpected stop.
+  - Redact URL credentials.
+  - Mark gaps from unexpected stops.
 - **Outputs:** A JSON export file and a status badge.
-- **Done when:** A full game recorded from setup to result matches the board on screen (already checked against screenshots in `PROTOCOL.md`).
+- **Done when:** Replayed match state matches recorded board transitions.
 
 #### FR-02 Validate an Uploaded Recording *(Phase 1)*
 
 - **Purpose:** Reject bad files before they reach the engine.
 - **Inputs:** An uploaded JSON file.
-- **Processing:** Check the size limit and the schema version. Check that the recording contains the game start and a game state. Detect gap markers.
+- **Processing:**
+  - Check the size limit and the schema version.
+  - Check that the recording contains the game start and a game state.
+  - Detect gap markers.
 - **Outputs:** Either an accepted recording or an error message ("This file can't be read", "Recording is missing the start of the game", "Recording has gaps; only complete sections will be reviewed").
 
 #### FR-03 Replay a Recorded Game in the Engine *(Phase 1)*
@@ -444,9 +494,11 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 
 #### FR-05 Hidden-Information Views *(Phase 1)*
 
-- **Purpose:** Make sure bots and reviews use only what a player could know.
+- **Purpose:** Enforce information-set boundaries.
 - **Inputs:** A game state and a player seat.
-- **Processing:** Mask opponents' resource identities and unplayed development cards. Expose public information (card counts, public logs, the board).
+- **Processing:**
+  - Mask opponent resource identities and unplayed development cards.
+  - Expose public information.
 - **Outputs:** A player view.
 - **Done when:** No bot or review code can read hidden data through the view (enforced by tests).
 
@@ -454,22 +506,27 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 
 - **Purpose:** Compare the four approaches fairly.
 - **Inputs:** A player view and a time limit.
-- **Processing:** Each bot (AlphaBeta, MCTS, AlphaZero-style, PPO, plus a random baseline) picks a legal move within the time limit and estimates its win probability.
+- **Processing:**
+  - Each bot (AlphaBeta, MCTS, AlphaZero-style, PPO, plus a random baseline) picks a legal move within the time limit and estimates its win probability.
 - **Outputs:** A move and a win probability.
-- **Done when:** Each implemented bot beats the random baseline over a fixed number of seeded games, and never returns an illegal move or exceeds the limit. [OPEN] I-5: which bots are due in Q1.
+- **Done when:** Each implemented bot beats the random baseline over a fixed number of seeded games with no illegal moves or timeout violations. [OPEN] I-5: which bots are due in Q1.
 
 #### FR-07 Opening Placement Review *(Phase 1)*
 
-- **Purpose:** Teach good opening placements.
-- **Inputs:** A board (from a recording or set up by hand) and the user's chosen placements.
-- **Processing:** Evaluate candidate settlement and road placements with rollouts. Compute win probability and the factors behind it: pips, resource variety, ports, and expansion room.
+- **Purpose:** Audit opening placements.
+- **Inputs:** Board layout (from recording or hand setup) and player opening placements.
+- **Processing:**
+  - Evaluate candidate settlement and road placements with rollouts.
+  - Compute win probability and the causal factors: pips, resource variety, ports, and expansion room.
 - **Outputs:** Ranked candidates, the user's placement compared with the best one, plain-language reasons, and an "about equal" notice when results overlap statistically.
+- **Done when**: Audit of a standard board evaluates candidate vertices within $\le 30\text{ s}$ and outputs structured ranking JSON matching the UI schema.
 
 #### FR-08 Move-by-Move Review *(Phase 2)*
 
 - **Purpose:** Separate decision quality from luck.
 - **Inputs:** A replayed game (FR-03).
-- **Processing:** For each of the recorder's decisions, compare the win probability after **their** move with the win probability after the **bot's best** move, using only the recorder's information at that time.
+- **Processing:**
+  - For each of the recorder's decisions, compare the win probability after **their** move with the win probability after the **bot's best** move, using only the recorder's information at that time.
 - **Outputs:** For each move: a grade, the change in win probability, the best alternative, and the confidence.
 - **Label names and thresholds:** chess.com-style labels (best / good / inaccuracy / mistake / blunder) or our own. [OPEN] I-3.
 
@@ -477,21 +534,27 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 
 - **Purpose:** Let the user spar against bots.
 - **Inputs:** Difficulty selection and the user's moves.
-- **Processing:** Run a 4-player game of the user against three bots, with bot turns streamed over the WebSocket. Includes player-to-player trades between the user and the bots.
+- **Processing:**
+  - Run a 4-player game of the user against three bots, with bot turns streamed over the WebSocket.
+  - Includes player-to-player trades between the user and the bots.
 - **Outputs:** A complete game, saved as a practice session (with accounts, Phase 2) and available for review.
 
 #### FR-10 Trade Valuation *(Phase 2)*
 
 - **Purpose:** Judge whether a trade helps the player.
 - **Inputs:** A proposed trade and a player view.
-- **Processing:** Estimate the change in win probability for both sides. Weigh in how much the trade helps the table leader, and the likely hands of the other party.
+- **Processing:**
+  - Estimate the change in win probability for both sides.
+  - Weigh in how much the trade helps the table leader, and the likely hands of the other party.
 - **Outputs:** A trade score with an explanation. This is used by the review, the practice bots, and table talk.
 
 #### FR-11 Real-Player Testing on Colonist *(Phase 2)*
 
 - **Purpose:** Measure bot strength against real people.
 - **Inputs:** Live game state, viewed by a team member.
-- **Processing:** A team member manually plays the moves the bot suggests. The game is recorded with the Collector.
+- **Processing:**
+  - A team member manually plays the moves the bot suggests.
+  - The game is recorded with the Collector.
 - **Outputs:** Win rate and placement results against human opponents.
 - **Constraint:** No automated input to Colonist.
 
@@ -499,7 +562,8 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 
 - **Purpose:** Persist the user's recordings, reviews, and sessions.
 - **Inputs:** Sign-up / log-in credentials.
-- **Processing:** Authenticate the user and link their data to the account.
+- **Processing:**
+  - Authenticate the user and link their data to the account.
 - **Outputs:** History pages.
 - **Login method:** email/password or OAuth. [OPEN] I-16.
 
@@ -507,35 +571,42 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 
 - **Purpose:** Check that "30% to win" really means about 30%.
 - **Inputs:** Predicted win probabilities and actual outcomes from real and simulated games.
-- **Processing:** Group predictions into bins and compare them with observed win rates. Compute the Brier score.
+- **Processing:**
+  - Group predictions into bins and compare them with observed win rates.
+  - Compute the Brier score.
 - **Outputs:** A calibration report.
 
 #### FR-14 What-If Branching *(Phase 3)*
 
 - **Purpose:** Explore alternative lines.
 - **Inputs:** A turn in a game and an alternative move.
-- **Processing:** Create a branch from that turn, simulate play-outs, and keep each branch linked to its parent (like Git branches).
+- **Processing:**
+  - Create a branch from that turn, simulate play-outs, and keep each branch linked to its parent (like Git branches).
 - **Outputs:** A comparison of the branches' win probabilities and typical play-outs.
 
 #### FR-15 Table Talk *(Phase 3)*
 
 - **Purpose:** Study and use negotiation.
 - **Inputs:** A player view.
-- **Processing:** Choose an intent (propose trade, name the leader, "I'm not a threat", team up against the leader, stay quiet) and turn it into text, using templates and/or an LLM.
+- **Processing:**
+  - Choose an intent (propose trade, name the leader, "I'm not a threat", team up against the leader, stay quiet) and turn it into text, using templates and/or an LLM.
 - **Outputs:** A chat message, or silence. [OPEN] I-4.
 
 #### FR-16 Arena *(internal from Phase 2, full in Phase 3)*
 
 - **Purpose:** Benchmark bots.
 - **Inputs:** Bot versions, number of games, seeds.
-- **Processing:** Run 4-player tournaments, rotating seats to cancel out turn-order advantage. Update Elo ratings. External bots (e.g. Catanatron) run as separate processes behind the bot interface.
+- **Processing:**
+  - Run 4-player tournaments, rotating seats to cancel out turn-order advantage.
+  - Update Elo ratings. External bots (e.g. Catanatron) run as separate processes behind the bot interface.
 - **Outputs:** A leaderboard and per-matchup statistics.
 
 #### FR-17 Habit Diagnostics *(Phase 3)*
 
 - **Purpose:** Surface a user's recurring mistakes.
 - **Inputs:** All of a user's reviewed games.
-- **Processing:** Combine grades by decision type.
+- **Processing:**
+  - Combine grades by decision type.
 - **Outputs:** The top recurring habits (e.g. "you hold development cards too long"), shown only after a minimum number of games. [OPEN] I-17: the minimum number.
 
 ### 3.3 Performance Requirements
