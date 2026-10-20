@@ -6,7 +6,7 @@
 | **Status** | Draft |
 | **Team** | Mayflower |
 | **Authors** | Noah Levine, Caleb Weisgerber, Ryan Massenburg, Emmett Oliver |
-| **Last Updated** | 10/18/2026 |
+| **Last Updated** | 10/19/2026 |
 
 > **Reading this draft:** Items marked **[OPEN]** still need a team decision and are tracked in [Appendix B](#appendix-b-issues-list). Items marked **[PROPOSED]** are suggested defaults that need confirmation. Remove both markers once they are agreed.
 
@@ -20,6 +20,8 @@
 | 0.4 | | 10/15/2026 | Revised Sections 1.1 / 1.2 based on vision proposal | Emmett Oliver |
 | 0.5 | | 10/16/2026 | Updated Sections 1.2, 1.4, 2.7, 2.8 | Emmett Oliver |
 | 0.6 | | 10/18/2026 | Converted to Markdown. Fixed 1.4 definitions and engine naming. Updated 1.2 scope (4-player only, player trading, bot comparison, Colonist testing). Drafted 2.2–2.6, Section 3 and both appendices from team answers | Caleb Weisgerber |
+| 0.7 | | 10/19/2026 | Edited Items Brought Emett | Caleb Weisgerber |
+
 
 [OPEN] I-11: Does the instructor need to sign the "Approved By" column?
 
@@ -50,14 +52,14 @@ It sets acceptance criteria for deciding when deliverables are complete, and ens
 
 ### 1.2 Scope
 
-The platform is a web-based teaching and analysis tool. It helps players analyze board placements, evaluate strategic choices against dice variance, and practice against diverse AI opponents.
+The platform is a web-based teaching and analysis tool. It helps players analyze starting board placements and strategic choices throughout the game. Our platform will let players practice against our diverse AI opponents.
 
 Project Mayflower works as a post-game review suite and a sparring engine:
 1. A client-side extension records match data from the player's own games on Colonist.io.
 2. The move stream is fed into our Game Engine.
-3. The system computes changes in win probability to give explainable feedback on opening placements, build choices, resource management, robber placements, and trades.
+3. The system computes changes in win probability to give explainable feedback on actions taking in game.
 
-The platform targets **base-game, 4-player Catan only**, including **player-to-player trading** under hidden information.
+The platform targets **base-game, 4-player Catan only**, and includes **player-to-player trading** while respecting the hidden card of other players.
 
 The project has a research component as well as the product. It compares four bot approaches under identical rules and time limits:
 - AlphaBeta search;
@@ -97,7 +99,7 @@ The project has a research component as well as the product. It compares four bo
 - **Configurable Bot Archetypes:** Parameterized play styles that simulate distinct opponent personalities.
 - **The Arena:** Automated bot-vs-bot tournaments with Elo ratings, including benchmarks against external bots.
 - **Bot Comparison Write-Up:** A report comparing the four bot approaches, based on Arena results.
-- **Longitudinal Habit Diagnostics:** Cross-game analytics that surface a user's recurring habits.
+- **In Game Habit Diagnostics:** Cross-game analytics that surface a user's recurring bad habit(s).
 - **Cloud Worker Deployment & Scaled Storage:** Cloud worker nodes and object storage for historical game records and model checkpoints.
 
 #### Out of scope
@@ -233,7 +235,7 @@ Detailed requirements are in Section 3.2.
 
 | Data | Source | Stored Where | Notes |
 | --- | --- | --- | --- |
-| Raw Colonist recordings | Collector export (JSON) | Server after upload | Contains the recorder's own hand, other players' card **counts** only, public game logs, chat, and usernames |
+| Raw Colonist recordings | Collector export (JSON) | On Server after user upload | Contains the recorder's own hand, other players' card **counts** only, public game logs, chat, and usernames |
 | Parsed games and moves | Game Engine replay of recordings | Database | Includes game settings (friendly robber, dice mode, discard limit) |
 | Synthetic game datasets | Self-play and Arena | File/object storage | Large; versioned with the bot model that generated them |
 | Practice sessions | Practice mode | Database | Full move history, bot versions, and difficulty |
@@ -269,7 +271,7 @@ Detailed requirements are in Section 3.2.
 
 **Constraints**
 - **Budget:** Perferable low cost training on personal hardware. If speed becomes an issue we can look into Google Colab or another cloud option.
-- **Timeline:** Three quarters. Qaurter one team reflections on Oct 23, Nov 13, and Dec 4.
+- **Timeline:** Three quarters. Quarter one team reflections on Oct 23, Nov 13, and Dec 4.
 - **Team:** Four developers. [OPEN] I-15: ownership of Engine, Bots/Training, API/Web, Collector, and Docs.
 
 **Assumptions**
