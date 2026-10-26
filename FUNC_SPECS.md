@@ -216,6 +216,63 @@ Project Mayflower has four classes of users and technical stakeholders, each wit
 - **Before match starts:**
   1. Alex has the Collector installed in their browser.
   2. Alex starts the game recording with the popup menu (UI-01).
+```mermaid
+flowchart TD
+    %% Styling Definitions
+    classDef terminal fill:#2b2d42,stroke:#1d1e2c,stroke-width:2px,color:#fff;
+    classDef screen fill:#4a90e2,stroke:#2a6fbe,stroke-width:2px,color:#fff;
+    classDef action fill:#50c878,stroke:#3b9a5c,stroke-width:2px,color:#fff;
+    classDef branch fill:#f39c12,stroke:#d68910,stroke-width:2px,color:#fff;
+    classDef alert fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff;
+
+    %% Setup & Recording
+    Start([Start: Alex Wants to Review Match]):::terminal --> InstallCollector[Install Extension in Browser]:::action
+    InstallCollector --> OpenColonist[Play 4-Player Match on Colonist.io]:::action
+    OpenColonist --> UI01_Start[UI-01: Collector Popup<br>Start Recording]:::screen
+    UI01_Start --> Gameplay[Finish Game Session]:::action
+
+    %% Export & Upload
+    Gameplay --> UI01_Export[UI-01: Collector Popup<br>Click 'Export' to Download JSON]:::screen
+    UI01_Export --> UI02_Upload[UI-02: Upload Page<br>Drag & Drop Session File]:::screen
+
+    %% Validation & Processing (Left: Success, Right: Corrupted)
+    UI02_Upload --> FileIntegrityCheck{File Valid & Complete?}:::branch
+    
+    FileIntegrityCheck -->|Upload Success| ProcessingScreen[Loading Screen: Match Review in Progress]:::screen
+    FileIntegrityCheck -->|Corrupted / Gaps Found| CorruptedModal[UI-02: Missing Turns Notice<br>'Recording has gaps: opening review only']:::alert
+    
+    %% Processing Status Branch
+    ProcessingScreen --> SystemStatus{Review Completes?}:::branch
+    SystemStatus -->|Error / Timeout| ErrorModal[UI Alert Dialog:<br>'Could not finish review. Please try again.']:::alert
+    SystemStatus -->|Complete| MainReview[UI-04 & UI-05: Move-by-Move Review Board]:::screen
+
+    %% Navigation & Review Modes
+    CorruptedModal --> ViewOpening
+    MainReview --> TimelineNav[Timeline & Keyboard Navigation<br>Step through moves with arrow keys]:::action
+    TimelineNav --> ViewOpening[Inspect Opening Placements<br>View win probability shifts]:::screen
+    TimelineNav --> ViewMidGame[Inspect Mid-Game Moves<br>Hover blunder tooltips & opponent trades]:::screen
+
+    %% Opening Placement Evaluation Path
+    ViewOpening --> CheckEvaluation{Two Spots Statistically Close?}:::branch
+    CheckEvaluation -->|Yes: Within Dice Variance| AboutEqualBadge[UI-04: View 'About Equal' Label<br>Reads explanation of variance]:::screen
+    CheckEvaluation -->|No: Clear Difference| RankedList[View Clear Move Rankings]:::screen
+
+    %% Convergence into What-If Exploration
+    RankedList --> ExploreTurn{Curious About Other Choices?}:::branch
+    AboutEqualBadge --> ExploreTurn
+    ViewMidGame --> ExploreTurn
+
+    %% Branch Exploration Flow
+    ExploreTurn -->|Click 'Branch from here'| UI08[UI-08: What-If Explorer Modal]:::screen
+    ExploreTurn -->|No / Keep Original Line| EndReview([Alex Learns Key Mistakes & Best Lines]):::terminal
+    
+    UI08 --> ExplorationType{Select Practice Mode}:::branch
+    ExplorationType -->|Play from here| SparringMatch[Interactive Board:<br>Play Out Match Against 3 Bots]:::screen
+    ExplorationType -->|Simulate outcomes| SimulationView[Comparison Screen:<br>View Win % Estimates: Original vs. Alternative]:::screen
+
+    SparringMatch --> EndReview
+    SimulationView --> EndReview
+```
 
 #### Main Success Scenario
 1. **Record:** Alex plays a 4-player game on Colonist.io. The Collector displays an active status badge and records the game including the board, dice rolls, builds, player-to-player chats, and trades.
