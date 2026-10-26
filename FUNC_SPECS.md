@@ -212,48 +212,41 @@ Project Mayflower has four classes of users and technical stakeholders, each wit
 #### Example User Scenario: Reviewing a Lost Game
 
 - **User:** Alex, a ranked Colonist.io player.
-- **Goal:** Find out whether a loss came from bad decisions or bad dice, and try other moves.
-- **Before starting:**
+- **Goal:** To determine whether a loss was caused by bad decisions or unlucky dice and to try alternative moves.
+- **Before match starts:**
   1. Alex has the Collector installed in their browser.
-  2. Alex starts the game recording.
+  2. Alex starts the game recording with the popup menu (UI-01).
 
 #### Main Success Scenario
-1. **Record:** Alex plays a 4-player game on Colonist.io. The Collector records the game: the board, dice rolls, builds, player-to-player chats, and trades.
-2. **Export:** After the game, Alex opens the Collector popup (UI-01) and clicks "Export." The Collector saves the game as a JSON file (`colonist-session-collector/v1`).
-3. **Upload:** Alex drops the file onto the upload page (UI-02).
-4. **Queue the review:**
-   - The API checks the file (FR-02) and responds within 500 ms (NFR-05).
-   - The API adds a review job to the queue. The job holds the board, the recorded moves, and the random seeds.
-   - The page shows that the upload worked and that the review is in progress.
-5. **Review:**
-   - A worker picks up the job and replays the game in the engine (FR-03).
-   - The worker runs rollouts for the opening placements and the mid-game decisions to see how each move changed Alex's win probability (FR-07, FR-08).
-   - When the review is done, the worker saves the grades to the database.
-6. **Read the review (UI-04, UI-05):**
-   - The page shows the move-by-move review: a win-probability graph over the game and a grade for each move.
-   Example:
-     - Opening: Alex's first settlement was the best choice (+4.2% win probability), but the second cost 6.1%.
-     - Turn 18: A trade Alex made is marked as a blunder (−14.8%). The tooltip explains that it helped the table leader.
-7. **Result:** Alex sees which mistakes cost the game, sees that the dice were close to average, and learns to be more careful about trading with the leader.
+1. **Record:** Alex plays a 4-player game on Colonist.io. The Collector displays an active status badge and records the game including the board, dice rolls, builds, player-to-player chats, and trades.
+2. **Export:** After the game, Alex opens the Collector popup (UI-01) and selects "Export." The Collector provides a JSON file download.
+3. **Upload:** Alex navigates to the Mayflower web app and drops the game file onto the upload page (UI-02).
+4. **Processing Feedback:** The system confirms that the file is valid and upload was successful and displays an indicator that the match review is underway.
+5. **Review:** The system replays the match, audits the opening placements, and evaluates how each new placement shifted Alex's chances of winning.
+6. **Read the review (UI-04, UI-05):** The page shows the move-by-move review: a win-probability graph over the game and a grade for each move. Alex steps through each move with the arrow keys or jumps to a specific move using the timeline bar.
+  Example:
+     - Opening: The overlay shows Alex's first settlement was the best choice with +4.2% win probability, but the second settlement shows -6.1%.
+     - Turn 18: When Alex navigates to the turn, their trade is marked as a blunder (−14.8%). The hover tooltip explains how it helped the table leader.
+7. **Result:** Alex sees which mistakes cost the game, sees that the dice were close to average, and learns risks of trading with the leader.
 
 #### Alternative Path A: Two moves are about equal
 - **When:** Two opening spots have win probabilities too close to tell apart.
-- **What happens:** Instead of calling one of them an "inaccuracy," the review marks both as "about equal" and explains that the difference is within dice variance (UI-04).
+- **What happens:** Instead of labeling one as an "inaccuracy," the review labels both as "about equal" and explains that the difference is within dice variance (UI-04).
 
 #### Alternative Path B: What-If / Branch Exploration
-- **When:** Alex wants to see what might have happened if they had declined the Turn 18 trade, or expanded in a different direction later in the game.
-- **What happens:** Alex clicks "Branch from here" (UI-08), chooses an alternative move, and picks one of two ways to try it out:
-  - **Play from here [PROPOSED]:** Alex keeps playing against three AI opponents. They can reuse the remaining recorded dice rolls in order (switching to new rolls once the recording runs out), or use new rolls from the start of the branch.
-  - **Simulate outcomes:** Bots play all four seats over many games (e.g. 500 per branch) with new dice rolls, comparing the original move with the alternative.
+- **When:** Alex wants to see what might have happened if they had declined the Turn 18 trade or expanded in a different direction later in the game.
+- **What happens:** Alex selects "Branch from here" (UI-08), chooses an alternative move, and picks one of two ways to try it out:
+  - **Play from here [PROPOSED]:** Alex keeps playing the match in app against three AI opponents.
+  - **Simulate outcomes:** Bots play all four seats over many games comparing the original move with the alternative.
 - **Result:** Alex can practice the different strategy themselves or compare estimated win probabilities. For example, simulations might estimate a 24% chance of winning without the Turn 18 trade versus 9% with it. These estimates have some uncertainty and depend on how the bots play.
 
 #### Failure Case 1: Corrupted or Incomplete Session Upload
-- **When:** The browser crashed mid-game, so the Collector missed some turns and marked a gap in the file.
-- **What happens:** The upload check (FR-02) finds the gap. The full review is not available, but the opening review still is. Alex sees: *"This recording is missing turns 12–16, so a full review isn't available. You can still review your opening placements."*
+- **When:** The browser crashed mid-game, so the Collector missed some turns.
+- **What happens:** The full review is not available, but the opening review still is. Alex sees a popup: *"This recording is missing turns 12–16, so a full review isn't available. You can still review your opening placements."*
 
 #### Failure Case 2: Queue Timeout or Worker Node Failure
-- **When:** A worker crashes or runs out of memory during the review.
-- **What happens:** The job is retried once on another worker. If it fails again, the job is marked `FAILED`, the error is logged, and Alex sees: *"We couldn't finish this review. Please try again later."*
+- **When:** The system encounters an unexpected error while evaluating the game.
+- **What happens:** Alex sees a popup: *"We couldn't finish this review. Please try again later."*
 
 ### 2.3 Overview of Functional Requirements
 
