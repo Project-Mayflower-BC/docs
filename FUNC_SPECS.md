@@ -24,6 +24,7 @@
 | 0.8 | | 10/20/2026 | Corrected typos, added user story to 2.2, reduced words in 2 & 3, synchronized formatting in 3.2 | Emmett Oliver |
 | 0.9 | | 10/20/2026 | Simplified wording throughout (1.1, 1.2, 2.2 user scenario, 2.6–2.8, FR-01/05). Added two what-if modes to the scenario and FR-14 / UI-08 (play from here [PROPOSED], simulate outcomes). Rewrote FR-07 for snake placement order and opponent placements. Left the database choice open (I-19). Fixed typos | Caleb Weisgerber |
 | 1.1 | | 10/26/2026 | Edited user scenario removing technical details, adding more UI details, and adding wireframe | Emmett Oliver |
+| 1.2 | | 10/27/2026 | [Placeholder] | Emmett Oliver |
 
 ## Table of Contents
 
