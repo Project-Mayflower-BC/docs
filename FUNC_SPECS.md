@@ -211,7 +211,7 @@ Project Mayflower has four classes of users and technical stakeholders, each wit
 
 [OPEN] I-8: confirm the fourth class (Administrators / Maintainers).
 
-#### User Scenario 1: Reviewing a Lost Game
+#### **User Scenario 1: Reviewing a Lost Game**
 
 - **User:** Alex, a ranked Colonist.io player.
 - **Goal:** To determine whether a loss was caused by bad decisions or unlucky dice and to try alternative moves.
@@ -288,7 +288,7 @@ flowchart TD
      - Turn 18: When Alex navigates to the turn, their trade is marked as a blunder (−14.8%). The hover tooltip explains how it helped the table leader.
 7. **Result:** Alex sees which mistakes cost the game, sees that the dice were close to average, and learns risks of trading with the leader.
 
-#### Alternative Path A: Two moves are about equal
+#### Alternative Path A: Two Moves are About Equal
 - **When:** Two opening spots have win probabilities too close to tell apart.
 - **What happens:** Instead of labeling one as an "inaccuracy," the review labels both as "about equal" and explains that the difference is within dice variance (UI-04).
 
@@ -307,11 +307,12 @@ flowchart TD
 - **When:** The system encounters an unexpected error while evaluating the game.
 - **What happens:** Alex sees a popup: *"We couldn't finish this review. Please try again later."*
 
-#### User Scenario 2: Practicing a 4-Player Match Against Calibrated AI Personalities
+#### **User Scenario 2: Practicing a 4-Player Match Against Calibrated AI Personalities**
 - **User:** Jordan, an intermediate Catan player looking to improve their defense against aggressive trade and expansion styles. 
 - **Goal:** Practice decision-making in a low-stakes sandbox environment, testing trade boundaries against distinct opponent personalities before playing ranked matches. 
 - **Pre-conditions:** Jordan is logged into their Mayflower account and navigates to the Practice Table (UI-06). 
-Main Success Scenario
+
+#### Main Success Scenario
 1. **Configure Match:** Jordan opens the Practice Table (UI-06). A 4-player board is generated, and Jordan selects their seat and three bot opponents with distinct playstyle options: an "Aggressive Expansionist", a "Heavy Trader", and a "Defensive Developer". 
 2.	**Setup Placements:** Jordan picks their initial two settlements and roads directly on the board. The UI displays real-time feedback on port synergies and starting resource balance.
 3.	**Turn Progression:** As turns cycle, bot moves update automatically on the board. Jordan rolls dice, builds roads/settlements, and manages their hand via cursor-selectable interface controls.
