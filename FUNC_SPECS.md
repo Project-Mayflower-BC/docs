@@ -24,7 +24,7 @@
 | 0.8 | | 10/20/2026 | Corrected typos, added user story to 2.2, reduced words in 2 & 3, synchronized formatting in 3.2 | Emmett Oliver |
 | 0.9 | | 10/20/2026 | Simplified wording throughout (1.1, 1.2, 2.2 user scenario, 2.6–2.8, FR-01/05). Added two what-if modes to the scenario and FR-14 / UI-08 (play from here [PROPOSED], simulate outcomes). Rewrote FR-07 for snake placement order and opponent placements. Left the database choice open (I-19). Fixed typos | Caleb Weisgerber |
 | 1.1 | | 10/26/2026 | Edited user scenario removing technical details, adding more UI details, and adding wireframe | Emmett Oliver |
-| 1.2 | | 10/27/2026 | [Placeholder] | Emmett Oliver |
+| 1.2 | | 10/27/2026 | Added two new user scenarios | Emmett Oliver |
 
 ## Table of Contents
 
@@ -211,11 +211,11 @@ Project Mayflower has four classes of users and technical stakeholders, each wit
 
 [OPEN] I-8: confirm the fourth class (Administrators / Maintainers).
 
-#### Example User Scenario: Reviewing a Lost Game
+#### User Scenario 1: Reviewing a Lost Game
 
 - **User:** Alex, a ranked Colonist.io player.
 - **Goal:** To determine whether a loss was caused by bad decisions or unlucky dice and to try alternative moves.
-- **Before match starts:**
+- **Pre-conditions**
   1. Alex has the Collector installed in their browser.
   2. Alex starts the game recording with the popup menu (UI-01).
 ```mermaid
@@ -306,6 +306,36 @@ flowchart TD
 #### Failure Case 2: Queue Timeout or Worker Node Failure
 - **When:** The system encounters an unexpected error while evaluating the game.
 - **What happens:** Alex sees a popup: *"We couldn't finish this review. Please try again later."*
+
+#### User Scenario 2: Practicing a 4-Player Match Against Calibrated AI Personalities
+- **User:** Jordan, an intermediate Catan player looking to improve their defense against aggressive trade and expansion styles. 
+- **Goal:** Practice decision-making in a low-stakes sandbox environment, testing trade boundaries against distinct opponent personalities before playing ranked matches. 
+- **Pre-conditions:** Jordan is logged into their Mayflower account and navigates to the Practice Table (UI-06). 
+Main Success Scenario
+1. **Configure Match:** Jordan opens the Practice Table (UI-06). A 4-player board is generated, and Jordan selects their seat and three bot opponents with distinct playstyle options: an "Aggressive Expansionist", a "Heavy Trader", and a "Defensive Developer". 
+2.	**Setup Placements:** Jordan picks their initial two settlements and roads directly on the board. The UI displays real-time feedback on port synergies and starting resource balance.
+3.	**Turn Progression:** As turns cycle, bot moves update automatically on the board. Jordan rolls dice, builds roads/settlements, and manages their hand via cursor-selectable interface controls.
+4.	**Negotiate Trades:** On Turn 12, the "Heavy Trader" bot initiates a trade offer in the chat/trade panel. Jordan reviews the offer, uses a slider to propose a counteroffer, and completes the exchange. 
+5.	**Receive Live Hints:** When holding surplus cards on Turn 20, Jordan selects the "Get Advice" hint button. The interface highlights two candidate build locations, displaying estimated win-percentage shifts for each option. 
+6.	**Game Conclusion:** The match concludes when a player reaches 10 Victory Points. Jordan views an end-game summary screen showing resource generation over time, total dice roll distributions, and a button to save the session within the app. 
+7.	**Result:** Jordan saves the completed match to their account history (UI-07) and transitions directly to the Move Review to study key turning points. 
+
+#### Alternative Path A: Adjusting Bot Difficulty Mid-Match
+- **When:** Jordan feels the opponents are either too predictable or punishing during the mid-game. 
+- **What happens:** Jordan pauses the game, opens the match settings drawer, adjusts the bot strength slider, and resumes play immediately. 
+
+#### Alternative Path B: Restarting from Board Setup
+- **When:** Jordan realizes their opening placement leaves them completely starved of brick and wood within the first 6 turns. 
+- **What** happens: Jordan clicks "Restart from Setup" to retain the same randomized board layout while picking fresh starting settlements. 
+
+#### Failure Case 1: Session Interruption or Accidentally Closed Tab
+- **When:** Jordan accidentally closes their browser tab mid-game.
+-	**What happens:** Upon returning to the web app, Jordan sees a banner: "Unfinished practice game found." Clicking "Resume" restores the board state and hand cards exactly where they left off.
+
+#### Failure Case 2: Unresponsive Bot Move
+-	**When:** An opponent bot fails to declare an action within the turn timer limit. 
+-	**What happens:** The interface displays an inline banner: "Bot turn timed out. Skipping or making default pass." The turn advances to the next seat, so Jordan’s session never hangs indefinitely.
+
 
 ### 2.3 Overview of Functional Requirements
 
