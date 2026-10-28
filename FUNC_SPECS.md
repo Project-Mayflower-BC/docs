@@ -215,9 +215,7 @@ Project Mayflower has four classes of users and technical stakeholders, each wit
 
 - **User:** Alex, a ranked Colonist.io player.
 - **Goal:** To determine whether a loss was caused by bad decisions or unlucky dice and to try alternative moves.
-- **Pre-conditions**
-  1. Alex has the Collector installed in their browser.
-  2. Alex starts the game recording with the popup menu (UI-01).
+- **Pre-conditions:** Alex has the Collector installed in their browser and starts the game recording with the popup menu (UI-01).
 ```mermaid
 flowchart TD
     %% Styling Definitions
@@ -299,11 +297,11 @@ flowchart TD
   - **Simulate outcomes:** Bots play all four seats over many games comparing the original move with the alternative.
 - **Result:** Alex can practice the different strategy themselves or compare estimated win probabilities. For example, simulations might estimate a 24% chance of winning without the Turn 18 trade versus 9% with it. These estimates have some uncertainty and depend on how the bots play.
 
-#### Failure Case 1: Corrupted or Incomplete Session Upload
+#### Failure Case 1: Incomplete Recording
 - **When:** The browser crashed mid-game, so the Collector missed some turns.
 - **What happens:** The full review is not available, but the opening review still is. Alex sees a popup: *"This recording is missing turns 12–16, so a full review isn't available. You can still review your opening placements."*
 
-#### Failure Case 2: Queue Timeout or Worker Node Failure
+#### Failure Case 2: Review Interruption
 - **When:** The system encounters an unexpected error while evaluating the game.
 - **What happens:** Alex sees a popup: *"We couldn't finish this review. Please try again later."*
 
@@ -336,6 +334,36 @@ flowchart TD
 #### Failure Case 2: Unresponsive Bot Move
 -	**When:** An opponent bot fails to declare an action within the turn timer limit. 
 -	**What happens:** The interface displays an inline banner: "Bot turn timed out. Skipping or making default pass." The turn advances to the next seat, so Jordan’s session never hangs indefinitely.
+
+#### **User Scenario 3: Identifying Recurring Blunders Across Matches**
+- **User:** Taylor, a competitive player who regularly uploads matches but feels stuck at a specific ranking tier. 
+-	**Goal:** Discover long-term bad habits across multiple games rather than analyzing individual turns in isolation.
+- **Pre-conditions:** Taylor has an active account with at least 10 recorded games uploaded and reviewed.
+
+#### Main Success Scenario
+1.	**Navigate to Dashboard:** Taylor logs in and selects the "Habits & Trends" tab (UI-09) from the navigation bar.
+2.	**Review Habit Summary:** The dashboard displays an aggregate overview: average win-rate, dice luck index (comparing expected vs. actual rolls), and the three most common categorized mistakes across all uploaded games. 
+3.	**Inspect Specific Blunder Category:** Taylor notices a flagged pattern: "Over-trading with the Leader (−8.4% average win probability shift across 6 games)". 
+4.	**Drill Down into Match Examples:** Taylor selects the habit card. The view expands to show a list of specific matches and exact turn numbers where this blunder occurred.
+5.	**Jump to Match Review:** Taylor clicks on "Game #14, Turn 22". The app opens that match directly in the Move-by-Move Review (UI-05), jumping the timeline cursor to the flagged trade decision. 
+6.	**Compare Corrective Lines:** Taylor reviews the tooltip explaining why declining the trade or countering for a development card was superior. 
+7.	**Result:** Taylor understands their recurring strategic blind spot and queues a practice match to actively avoid making that mistake again. 
+
+#### Alternative Path A: Insufficient Game History
+-	**When:** A user visits the Habits Dashboard with fewer than the minimum required games uploaded. 
+-	**What happens:** The dashboard shows empty placeholder charts with an instructional message: "Upload at least 5 matches to unlock habit diagnostics. You currently have 2." A direct shortcut button to the Upload Page (UI-02) is provided. 
+
+#### Alternative Path B: Filtering Habits by Board Setup or Seat Order
+-	**When:** Taylor wants to analyze their habits specifically when playing from Seat 4 (last pick in snake-order placement). 
+-	**What happens:** Taylor selects "Seat 4" from the filter dropdown. The metrics recalibrate to show win rates and opening inaccuracies unique to that turn order. 
+
+#### Failure Case 1: Filter Returns No Matching Games
+-	**When:** Taylor applies restrictive filters that match no recorded games.
+-	**What happens:** The dashboard displays: "No games match your selected filters. Reset filters to view all habits." Taylor selects "Reset Filters" to restore the full view.
+
+#### Failure Case 2: Incomplete Game Files Excluded from Habit Metrics
+-	**When:** Some of Taylor's uploaded games contain gaps or missing turns due to browser disconnects. 
+-	**What happens:** A dismissible notice appears at the top of the dashboard: "3 games with missing turns were excluded from mid-game habit tracking, but their opening placements are included in setup trends." 
 
 
 ### 2.3 Overview of Functional Requirements
