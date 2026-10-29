@@ -6,7 +6,7 @@
 | **Status** | Draft |
 | **Team** | Mayflower |
 | **Authors** | Noah Levine, Caleb Weisgerber, Ryan Massenburg, Emmett Oliver |
-| **Last Updated** | 10/28/2026 |
+| **Last Updated** | 10/29/2026 |
 
 > **Reading this draft:** Items marked **[OPEN]** still need a team decision and are tracked in [Appendix B](#appendix-b-issues-list). Items marked **[PROPOSED]** are suggested defaults that need confirmation. Remove both markers once they are agreed.
 
@@ -14,14 +14,9 @@
 
 The full revision history is tracked in the GitHub commit history.
 
-**Last updated 10/28/2026** (Emmett Oliver, Caleb Weisgerber)
+**Last updated 10/29/2026** (Emmett Oliver)
 
-- Added User Scenario 2 (practice match against bots) and User Scenario 3 (habits across games).
-- Reframed User Scenario 1 as reviewing any recorded game, with what-if branching in the main flow.
-- Added crash recovery: resume recording on rejoin and rebuild missing turns from the game log (FR-01, FR-02, I-20).
-- Replaced fixed bot strategies with board-driven game plans plus selectable bot play styles (FR-18, I-21).
-- Made opening review explanations account for the user's seat in snake order (FR-07), and added a Seat 4 practice path to User Scenario 2.
-- Fixed a Catan rules error and the minimum-games conflict (I-17) in User Scenario 3.
+- Revised section 1.2 in accordance with in-class feedback and new assignment.
 
 ## Table of Contents
 
@@ -59,22 +54,14 @@ Project Mayflower works as a post-game review suite and a sparring engine:
 
 The platform targets **base-game, 4-player Catan only**, and includes **player-to-player trading**, even though other players' cards are hidden.
 
-The project has a research component as well as the product. It compares four bot approaches under identical rules and time limits:
-- AlphaBeta search;
-- Monte Carlo Tree Search (MCTS);
-- AlphaZero-style search (MCTS guided by a neural network);
-- Proximal Policy Optimization (PPO) reinforcement learning.
-
 #### In scope
 
-**Phase 1 (Quarter 1): Walking Skeleton / Core Prototype**
+**Phase 1: Core Prototype / User Scenario 1**
 
-- **The Collector (Chrome Extension):** A read-only extension for Chromium-based browsers. It records game events and turn actions from the user's own Colonist.io session and exports serialized match files. *(Built.)*
-- **Game Engine (Core):** A custom, headless implementation of base 4-player Catan rules, including player-to-player trading. It handles board topology, legal action validation and turn progression. It can replay recordings exported by the Collector (see FR-03 for what "replay" can guarantee under hidden information).
-- **Initial Bot Implementations:** First working versions of the bot approaches under comparison, behind a common bot interface. They are benchmarked against a random baseline. **[OPEN] I-5:** which of the four approaches must be running by the end of Q1.
-- **Opening Placement Reviewer:** The user picks opening settlements, and the bot simulates games from there to judge whether the opening was good or bad.
-- **Initial Review UI:** A web client for uploading game files, rendering the board, and auditing setup placements.
-- **Team Data Logging:** The team records every Colonist game it plays, to seed the human game dataset.
+- **Match Recording & Ingestion:** The user captures a standard 4-player Colonist.io match via the read-only extension for Chromium-based browsers (UI-01) and uploads the session export to the web application (UI-02).
+- **Setup Evaluation:** The platform uses the Game Engine to replay the opening phase, ranking initial settlements and road trajectories against candidate options based on production potential, resource balance, and port synergies (see FR-03 for what "replay" can guarantee under hidden information).
+- **Decision & Blunder Analysis:** The player inspects key turning points, viewing move-by-move shifts in estimated win probabilities and plain-language explanations of strategic inaccuracies.
+- **Targeted Sparring:** The player transitions into a sandbox environment powered by the Game Engine (UI-06) to replay crucial game states or test alternative strategies from any point in the game against calibrated AI bot archetypes.
 
 [OPEN] I-5: Phase 1 may be overloaded. The Game Engine and the bots are the Q1 priority. The Opening Reviewer, Review UI and job queue may move to Phase 2.
 
