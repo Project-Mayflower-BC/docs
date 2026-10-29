@@ -18,6 +18,7 @@ The full revision history is tracked in the GitHub commit history.
 
 - Revised section 1.2 in accordance with in-class feedback and new Nov 3 assignment.
 - Moved Opening Placement Reviewer to Phase 2 in light of current state of progress.
+- Added I-22
 
 ## Table of Contents
 
@@ -86,13 +87,12 @@ The platform targets **base-game, 4-player Catan only**, and includes **player-t
 
 **Phase 3: Extensions / Advanced Capabilities**
 
-- **What-If Branching:** Freezes the game at any turn so the user can try different moves and compare simulated outcomes branch by branch (like Git branches for a Catan game).
-- **Structured Table-Talk & Persuasion Engine:** Game-state-grounded message intents that let a bot propose trades, point out the table leader, or stay quiet (avoid unwanted attention).
-- **Configurable Bot Play Styles:** The user picks how each bot plays with other players: how it trades, whom it targets, whether it holds grudges, and how predictable it is. Each bot's game plan (e.g. ore/wheat/sheep, wood/brick, ports and trading) comes from its board position and seat.
-- **The Arena:** Automated bot-vs-bot tournaments with Elo ratings, including benchmarks against external bots.
-- **Bot Comparison Write-Up:** A report comparing the four bot approaches, based on Arena results.
-- **Habit Diagnostics:** Looks across a user's games to find mistakes they keep making.
-- **Cloud Worker Deployment & Scaled Storage:** Cloud worker nodes and object storage for historical game records and model checkpoints.
+- **What-If Branching (FR-14, UI-08):** The user freezes the game at any turn and can try different moves and compare simulated outcomes branch by branch (like Git branches for a Catan game).
+- **Structured Table-Talk & Persuasion:** The user practices negotiation with bot opponents who provide game-state-grounded messages to propose trades, point out the table leader, or stay quiet (avoid unwanted attention).
+- **Configurable Bot Play Styles:** The user picks and practices against bots with different play styles: how it trades, whom it targets, whether it holds grudges, and how predictable it is. Each bot's game plan (e.g. ore/wheat/sheep, wood/brick, ports and trading) comes from its board position and seat.
+- **The Arena:** The user views automated bot-vs-bot tournaments with Elo ratings, including benchmarks against external bots.
+- **Bot Comparison Write-Up:** A report comparing the four bot approaches, based on Arena results. [OPEN] I-22: Where does Bot Comparison Write-Up fit into a user scenario?
+- **Cloud Scaled Storage (NFR-06):** The user experiences rapid review turnarounds backed by cloud architecture and reliable storage for historical game archives.
 
 #### Out of scope
 
@@ -838,3 +838,4 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 | I-19 | Database choice for Phase 2: PostgreSQL or SQLite | Open |
 | I-20 | Does Colonist re-send the full game log on reconnect, so missing turns can be rebuilt after a crash? | Open |
 | I-21 | Which bot play styles ship first (FR-18) | Open |
+| I-22 | Where does Bot Comparison Write-Up fit into a user scenario? Is this an additional scenario or part of an existing one? | Open |
