@@ -6,23 +6,22 @@
 | **Status** | Draft |
 | **Team** | Mayflower |
 | **Authors** | Noah Levine, Caleb Weisgerber, Ryan Massenburg, Emmett Oliver |
-| **Last Updated** | 10/20/2026 |
+| **Last Updated** | 10/28/2026 |
 
 > **Reading this draft:** Items marked **[OPEN]** still need a team decision and are tracked in [Appendix B](#appendix-b-issues-list). Items marked **[PROPOSED]** are suggested defaults that need confirmation. Remove both markers once they are agreed.
 
-## Version History
+## Latest Changes
 
-| Version | Approved By | Revision Date | Description of Change | Author |
-| --- | --- | --- | --- | --- |
-| 0.1 | | 10/9/2026 | Added first draft of Section 1 | Emmett Oliver |
-| 0.2 | | 10/13/2026 | Revised Section 1.2 and started draft of 2.1 / 2.2 | Emmett Oliver |
-| 0.3 | | 10/14/2026 | Drafted Sections 2.7 / 2.8 | Emmett Oliver |
-| 0.4 | | 10/15/2026 | Revised Sections 1.1 / 1.2 based on vision proposal | Emmett Oliver |
-| 0.5 | | 10/16/2026 | Updated Sections 1.2, 1.4, 2.7, 2.8 | Emmett Oliver |
-| 0.6 | | 10/18/2026 | Converted to Markdown. Fixed 1.4 definitions and engine naming. Updated 1.2 scope (4-player only, player trading, bot comparison, Colonist testing). Drafted 2.2–2.6, Section 3 and both appendices from team answers | Caleb Weisgerber |
-| 0.7 | | 10/19/2026 | Edited Items Brought to attention by Emmett | Caleb Weisgerber |
-| 0.8 | | 10/20/2026 | Corrected typos, added user story to 2.2, reduced words in 2 & 3, synchronized formatting in 3.2 | Emmett Oliver |
-| 0.9 | | 10/20/2026 | Simplified wording throughout (1.1, 1.2, 2.2 user scenario, 2.6–2.8, FR-01/05). Added two what-if modes to the scenario and FR-14 / UI-08 (play from here [PROPOSED], simulate outcomes). Rewrote FR-07 for snake placement order and opponent placements. Left the database choice open (I-19). Fixed typos | Caleb Weisgerber |
+The full revision history is tracked in the GitHub commit history.
+
+**Last updated 10/28/2026** (Emmett Oliver, Caleb Weisgerber)
+
+- Added User Scenario 2 (practice match against bots) and User Scenario 3 (habits across games).
+- Reframed User Scenario 1 as reviewing any recorded game, with what-if branching in the main flow.
+- Added crash recovery: resume recording on rejoin and rebuild missing turns from the game log (FR-01, FR-02, I-20).
+- Replaced fixed bot strategies with board-driven game plans plus selectable bot play styles (FR-18, I-21).
+- Made opening review explanations account for the user's seat in snake order (FR-07), and added a Seat 4 practice path to User Scenario 2.
+- Fixed a Catan rules error and the minimum-games conflict (I-17) in User Scenario 3.
 
 ## Table of Contents
 
@@ -95,7 +94,7 @@ The project has a research component as well as the product. It compares four bo
 
 - **What-If Branching:** Freezes the game at any turn so the user can try different moves and compare simulated outcomes branch by branch (like Git branches for a Catan game).
 - **Structured Table-Talk & Persuasion Engine:** Game-state-grounded message intents that let a bot propose trades, point out the table leader, or stay quiet (avoid unwanted attention).
-- **Configurable Bot Archetypes:** Parameterized play styles that simulate distinct opponent personalities.
+- **Configurable Bot Play Styles:** The user picks how each bot plays with other players: how it trades, whom it targets, whether it holds grudges, and how predictable it is. Each bot's game plan (e.g. ore/wheat/sheep, wood/brick, ports and trading) comes from its board position and seat.
 - **The Arena:** Automated bot-vs-bot tournaments with Elo ratings, including benchmarks against external bots.
 - **Bot Comparison Write-Up:** A report comparing the four bot approaches, based on Arena results.
 - **Habit Diagnostics:** Looks across a user's games to find mistakes they keep making.
@@ -209,51 +208,169 @@ Project Mayflower has four classes of users and technical stakeholders, each wit
 
 [OPEN] I-8: confirm the fourth class (Administrators / Maintainers).
 
-#### Example User Scenario: Reviewing a Lost Game
+#### **User Scenario 1: Reviewing a Recorded Game**
 
 - **User:** Alex, a ranked Colonist.io player.
-- **Goal:** Find out whether a loss came from bad decisions or bad dice, and try other moves.
-- **Before starting:**
-  1. Alex has the Collector installed in their browser.
-  2. Alex starts the game recording.
+- **Goal:** To understand which decisions helped or hurt their chances of winning, separate dice luck from decision quality, and try alternative moves.
+- **Pre-conditions:** Alex has the Collector installed in their browser, is logged into their Mayflower account, and starts the game recording with the popup menu (UI-01).
+```mermaid
+flowchart TD
+    %% Styling Definitions
+    classDef terminal fill:#2b2d42,stroke:#1d1e2c,stroke-width:2px,color:#fff;
+    classDef screen fill:#4a90e2,stroke:#2a6fbe,stroke-width:2px,color:#fff;
+    classDef action fill:#50c878,stroke:#3b9a5c,stroke-width:2px,color:#fff;
+    classDef branch fill:#f39c12,stroke:#d68910,stroke-width:2px,color:#fff;
+    classDef alert fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff;
+
+    %% Setup & Recording
+    Start([Start: Alex Wants to Review Match]):::terminal --> OpenColonist[Play 4-Player Match on Colonist.io]:::action
+    OpenColonist --> UI01_Start[UI-01: Collector Popup<br>Start Recording]:::screen
+    UI01_Start --> Gameplay[Finish Game Session]:::action
+
+    %% Export & Upload
+    Gameplay --> UI01_Export[UI-01: Collector Popup<br>Click 'Export' to Download JSON]:::screen
+    UI01_Export --> UI02_Upload[UI-02: Upload Page<br>Drag & Drop Session File]:::screen
+
+    %% Validation & Processing (Left: Success, Right: Corrupted)
+    UI02_Upload --> FileIntegrityCheck{File Valid & Complete?}:::branch
+    
+    FileIntegrityCheck -->|Upload Success| ProcessingScreen[Loading Screen: Match Review in Progress]:::screen
+    FileIntegrityCheck -->|Gaps Found| Reconstruct{Missing Turns Rebuilt<br>from Game Log? PROPOSED}:::branch
+    Reconstruct -->|Yes| ProcessingScreen
+    Reconstruct -->|No| CorruptedModal[UI-02: Missing Turns Notice<br>'Missing turns can't be reviewed; the rest of the game can']:::alert
+    
+    %% Processing Status Branch
+    ProcessingScreen --> SystemStatus{Review Completes?}:::branch
+    SystemStatus -->|Error / Timeout| ErrorModal[UI Alert Dialog:<br>'Could not finish review. Please try again.']:::alert
+    SystemStatus -->|Complete| MainReview[UI-03, UI-04 & UI-05: Board Viewer with<br>Move-by-Move Review and Dice Luck Summary]:::screen
+
+    %% Navigation & Review Modes
+    CorruptedModal --> ProcessingScreen
+    MainReview --> TimelineNav[Timeline & Keyboard Navigation<br>Step through moves with arrow keys]:::action
+    TimelineNav --> ViewOpening[Inspect Opening Placements<br>View win probability shifts]:::screen
+    TimelineNav --> ViewMidGame[Inspect Mid-Game Moves<br>Hover blunder tooltips & opponent trades]:::screen
+
+    %% Opening Placement Evaluation Path
+    ViewOpening --> CheckEvaluation{Two Spots Statistically Close?}:::branch
+    CheckEvaluation -->|Yes: Within Dice Variance| AboutEqualBadge[UI-04: View 'About Equal' Label<br>Reads explanation of variance]:::screen
+    CheckEvaluation -->|No: Clear Difference| RankedList[View Clear Move Rankings]:::screen
+
+    %% Convergence into What-If Exploration
+    RankedList --> ExploreTurn{Curious About Other Choices?}:::branch
+    AboutEqualBadge --> ExploreTurn
+    ViewMidGame --> ExploreTurn
+
+    %% Branch Exploration Flow
+    ExploreTurn -->|Click 'Branch from here'| UI08[UI-08: What-If Explorer Modal]:::screen
+    ExploreTurn -->|No / Keep Original Line| EndReview([Alex Learns Key Decisions & Best Lines]):::terminal
+    
+    UI08 --> ExplorationType{Select Branch Mode}:::branch
+    ExplorationType -->|Play from here| SparringMatch[Interactive Board:<br>Play Out Match Against 3 Bots]:::screen
+    ExplorationType -->|Simulate outcomes| SimulationView[Comparison Screen:<br>View Win % Estimates: Original vs. Alternative]:::screen
+
+    SparringMatch --> EndReview
+    SimulationView --> EndReview
+```
 
 #### Main Success Scenario
-1. **Record:** Alex plays a 4-player game on Colonist.io. The Collector records the game: the board, dice rolls, builds, player-to-player chats, and trades.
-2. **Export:** After the game, Alex opens the Collector popup (UI-01) and clicks "Export." The Collector saves the game as a JSON file (`colonist-session-collector/v1`).
-3. **Upload:** Alex drops the file onto the upload page (UI-02).
-4. **Queue the review:**
-   - The API checks the file (FR-02) and responds within 500 ms (NFR-05).
-   - The API adds a review job to the queue. The job holds the board, the recorded moves, and the random seeds.
-   - The page shows that the upload worked and that the review is in progress.
-5. **Review:**
-   - A worker picks up the job and replays the game in the engine (FR-03).
-   - The worker runs rollouts for the opening placements and the mid-game decisions to see how each move changed Alex's win probability (FR-07, FR-08).
-   - When the review is done, the worker saves the grades to the database.
-6. **Read the review (UI-04, UI-05):**
-   - The page shows the move-by-move review: a win-probability graph over the game and a grade for each move.
-   Example:
-     - Opening: Alex's first settlement was the best choice (+4.2% win probability), but the second cost 6.1%.
-     - Turn 18: A trade Alex made is marked as a blunder (−14.8%). The tooltip explains that it helped the table leader.
-7. **Result:** Alex sees which mistakes cost the game, sees that the dice were close to average, and learns to be more careful about trading with the leader.
+1. **Record:** Alex plays a 4-player game on Colonist.io. The Collector displays an active status badge and records the game including the board, dice rolls, builds, player-to-player chats, and trades.
+2. **Export:** After the game, Alex opens the Collector popup (UI-01) and selects "Export." The Collector provides a JSON file download.
+3. **Upload:** Alex navigates to the Mayflower web app and drops the game file onto the upload page (UI-02).
+4. **Processing Feedback:** The system confirms that the file is valid and upload was successful and displays an indicator that the match review is underway.
+5. **Review:** The system replays the match, evaluates the opening placements, and grades how each move shifted Alex's chances of winning.
+6. **Read the review (UI-03, UI-04, UI-05):** The page shows the board at the selected turn alongside the move-by-move review: a win-probability graph over the game, a grade for each move, and a dice luck summary comparing expected and actual rolls. Alex steps through each move with the arrow keys or jumps to a specific move using the timeline bar.
+  Example:
+     - Opening: The overlay shows Alex's first settlement was the best choice with +4.2% win probability, but the second settlement shows -6.1%.
+     - Turn 18: When Alex navigates to the turn, their trade is marked as a blunder (−14.8%). The hover tooltip explains how it helped the table leader.
+7. **Branch from a turn (UI-08):** Alex wants to see what might have happened if they had declined the Turn 18 trade. Alex selects "Branch from here," chooses the alternative move, and tries it out (see Alternative Path B for the two branch modes). For example, simulations might estimate a 24% chance of winning without the Turn 18 trade versus 9% with it. These estimates have some uncertainty and depend on how the bots play.
+8. **Result:** Alex sees which decisions mattered most, sees that the dice were close to average, and learns the risks of trading with the leader. The review is saved to Alex's account history (UI-07).
 
-#### Alternative Path A: Two moves are about equal
+#### Alternative Path A: Two Moves are About Equal
 - **When:** Two opening spots have win probabilities too close to tell apart.
-- **What happens:** Instead of calling one of them an "inaccuracy," the review marks both as "about equal" and explains that the difference is within dice variance (UI-04).
+- **What happens:** Instead of labeling one as an "inaccuracy," the review labels both as "about equal" and explains that the difference is within dice variance (UI-04).
 
-#### Alternative Path B: What-If / Branch Exploration
-- **When:** Alex wants to see what might have happened if they had declined the Turn 18 trade, or expanded in a different direction later in the game.
-- **What happens:** Alex clicks "Branch from here" (UI-08), chooses an alternative move, and picks one of two ways to try it out:
-  - **Play from here [PROPOSED]:** Alex keeps playing against three AI opponents. They can reuse the remaining recorded dice rolls in order (switching to new rolls once the recording runs out), or use new rolls from the start of the branch.
-  - **Simulate outcomes:** Bots play all four seats over many games (e.g. 500 per branch) with new dice rolls, comparing the original move with the alternative.
-- **Result:** Alex can practice the different strategy themselves or compare estimated win probabilities. For example, simulations might estimate a 24% chance of winning without the Turn 18 trade versus 9% with it. These estimates have some uncertainty and depend on how the bots play.
+#### Alternative Path B: Choosing a Branch Mode
+- **When:** Alex has selected "Branch from here" (UI-08) and chosen an alternative move.
+- **What happens:** Alex picks one of two ways to try it out:
+  - **Play from here [PROPOSED]:** Alex keeps playing the match in app against three AI opponents.
+  - **Simulate outcomes:** Bots play all four seats over many games comparing the original move with the alternative.
+- **Result:** Alex can practice the different strategy themselves or compare estimated win probabilities side by side.
 
-#### Failure Case 1: Corrupted or Incomplete Session Upload
-- **When:** The browser crashed mid-game, so the Collector missed some turns and marked a gap in the file.
-- **What happens:** The upload check (FR-02) finds the gap. The full review is not available, but the opening review still is. Alex sees: *"This recording is missing turns 12–16, so a full review isn't available. You can still review your opening placements."*
+#### Failure Case 1: Incomplete Recording
+- **When:** The browser crashed mid-game, so the Collector missed turns 12–16.
+- **What happens:** When Alex rejoins the game, the Collector resumes recording and links the new recording to the original one. On upload, the system tries to rebuild the missing turns from the game log [PROPOSED]:
+  - **Gap fully rebuilt:** The full review is available. Turns 12–16 are marked "Reconstructed from game log."
+  - **Gap can't be rebuilt:** Alex sees a popup: *"This recording is missing turns 12–16. Those turns can't be reviewed, but the rest of the game can."*
+- [OPEN] I-20: confirm whether Colonist re-sends the full game log on reconnect.
 
-#### Failure Case 2: Queue Timeout or Worker Node Failure
-- **When:** A worker crashes or runs out of memory during the review.
-- **What happens:** The job is retried once on another worker. If it fails again, the job is marked `FAILED`, the error is logged, and Alex sees: *"We couldn't finish this review. Please try again later."*
+#### Failure Case 2: Review Interruption
+- **When:** The system encounters an unexpected error while evaluating the game.
+- **What happens:** Alex sees a popup: *"We couldn't finish this review. Please try again later."*
+
+#### **User Scenario 2: Practicing a 4-Player Match Against Bots with Distinct Play Styles**
+- **User:** Jordan, an intermediate Catan player looking to improve against different styles of players. 
+- **Goal:** Practice decision-making in a fast-paced sandbox environment, playing against distinct opponent styles before playing ranked matches. 
+- **Pre-conditions:** Jordan is logged into their Mayflower account and navigates to the Practice Table (UI-06). 
+
+#### Main Success Scenario
+1. **Configure Match:** Jordan opens the Practice Table (UI-06). A 4-player board is generated, and Jordan selects their seat, a difficulty, and a play style for each of the three bots (Phase 3, FR-18): a "Grudge-holder", a "Hard Trader", and a "Table Balancer". The play style sets how a bot behaves toward other players. Each bot's game plan comes from the board and its seat.
+2. **Setup Placements:** Jordan picks their initial two settlements and roads directly on the board. The UI displays real-time feedback on port synergies and starting resource balance. After setup, the board labels the plan each bot is following based on its placements (e.g. "Blue: ore/wheat/sheep for cities and development cards", "Red: wood/brick for Longest Road").
+3. **Turn Progression:** As turns cycle, bot moves update automatically on the board. Jordan rolls dice, builds roads/settlements, and manages their hand with the on-screen controls. On Turn 5, Jordan builds a road that cuts off the Grudge-holder's expansion. For the rest of the game, the Grudge-holder favors placing the robber on Jordan's hexes and refuses Jordan's trades.
+4. **Negotiate Trades:** On Turn 12, the "Hard Trader" bot initiates a trade offer in the chat/trade panel. Jordan reviews the offer, proposes a counteroffer, and completes the exchange. 
+5. **Receive Live Hints:** When holding surplus cards on Turn 20, Jordan selects the "Get Advice" hint button. The interface highlights two candidate build locations, displaying estimated win-percentage shifts for each option. 
+6. **Game Conclusion:** Once the game ends, Jordan views an end-game summary screen showing resource generation over time, total dice roll distributions, and a button to save the session to their profile. 
+7. **Result:** Jordan saves the completed match to their account history (UI-07) and transitions directly to the Move Review to study key turning points. 
+
+#### Alternative Path A: Adjusting Bot Difficulty Mid-Match
+- **When:** Jordan feels the opponents are either too predictable or punishing during the mid-game. 
+- **What happens:** Jordan pauses the game, opens the match settings drawer, adjusts the bot strength slider, and resumes play immediately. 
+
+#### Alternative Path B: Restarting from Board Setup
+- **When:** Jordan realizes their opening placement and/or lack of trading has left them far behind within the first 10 turns. 
+- **What happens:** Jordan clicks "Restart from Setup" to retain the same randomized board layout while picking fresh starting settlements. 
+
+#### Alternative Path C: Practicing a Specific Seat
+- **When:** Jordan usually struggles when they place last.
+- **What happens:** Jordan picks Seat 4, so the three bots place first. Jordan places both settlements back-to-back and builds a plan from the spots that are left. After setup, the opening review (UI-04) explains how the earlier picks limited Jordan's options.
+
+#### Failure Case 1: Session Interruption or Accidentally Closed Tab
+- **When:** Jordan accidentally closes their browser tab mid-game.
+- **What happens:** Upon returning to the web app, Jordan sees a banner: "Unfinished practice game found." Clicking "Resume" restores the board state and hand cards exactly where they left off.
+
+#### Failure Case 2: Unresponsive Bot Move
+- **When:** An opponent bot fails to declare an action within the turn timer limit. 
+- **What happens:** The interface displays an inline banner: "Bot turn timed out. The bot ended its turn without acting." The turn advances to the next seat, so Jordan’s session never hangs indefinitely.
+
+#### **User Scenario 3: Identifying Recurring Blunders Across Matches**
+- **User:** Taylor, a competitive player who regularly uploads matches but feels stuck at a specific ranking tier. 
+- **Goal:** Discover long-term bad habits across multiple games rather than analyzing individual turns in isolation.
+- **Pre-conditions:** Taylor has an active account with at least the minimum number of recorded games uploaded and reviewed ([OPEN] I-17).
+
+#### Main Success Scenario
+1. **Navigate to Dashboard:** Taylor logs in and selects the "Habits & Trends" tab (UI-09) from the navigation bar.
+2. **Review Habit Summary:** The dashboard displays an aggregate overview: average win-rate, dice luck index (comparing expected vs. actual rolls), and the three most common categorized mistakes across all uploaded games, such as "Over-trading with the Leader," "Overpaying in early-game trades," and "Holding development cards too long." 
+3. **Inspect Specific Blunder Category:** Taylor notices a flagged pattern: "Over-trading with the Leader (−8.4% average win probability shift across 6 games)". 
+4. **Drill Down into Match Examples:** Taylor selects the habit card. The view expands to show a list of specific matches and exact turn numbers where this blunder occurred.
+5. **Jump to Match Review:** Taylor clicks on "Game #14, Turn 22". The app opens that match directly in the Move-by-Move Review (UI-05), jumping the timeline cursor to the flagged trade decision. 
+6. **Compare Corrective Lines:** Taylor reviews the tooltip explaining why declining the trade or using a port trade instead was superior. 
+7. **Result:** Taylor understands their recurring strategic blind spot and queues a practice match (UI-06) against a "Hard Trader" bot to practice turning down trades that help the leader. 
+
+#### Alternative Path A: Insufficient Game History
+- **When:** A user visits the Habits Dashboard with fewer than the minimum required games uploaded. 
+- **What happens:** The dashboard shows empty placeholder charts with an instructional message: "Upload at least [N] matches to unlock habit diagnostics. You currently have 2." ([OPEN] I-17: the value of N.) A direct shortcut button to the Upload Page (UI-02) is provided. 
+
+#### Alternative Path B: Filtering Habits by Board Setup or Seat Order
+- **When:** Taylor wants to analyze their habits specifically when playing from Seat 4 (places both opening settlements back-to-back in snake order). 
+- **What happens:** Taylor selects "Seat 4" from the filter dropdown. The metrics recalibrate to show win rates and opening inaccuracies unique to that turn order. 
+
+#### Failure Case 1: Filter Returns No Matching Games
+- **When:** Taylor applies restrictive filters that match no recorded games.
+- **What happens:** The dashboard displays: "No games match your selected filters. Reset filters to view all habits." Taylor selects "Reset Filters" to restore the full view.
+
+#### Failure Case 2: Incomplete Game Files Excluded from Habit Metrics
+- **When:** Some of Taylor's uploaded games contain gaps or missing turns due to browser disconnects. 
+- **What happens:** Games whose missing turns were rebuilt from the game log [PROPOSED] count toward habit metrics like any other game. For games that couldn't be rebuilt, a dismissible notice appears at the top of the dashboard: "3 games with missing turns were excluded from mid-game habit tracking, but their opening placements are included in setup trends." 
+
 
 ### 2.3 Overview of Functional Requirements
 
@@ -407,7 +524,7 @@ Project Mayflower will provide documentation for competitive players, casual lea
 | UI-03 | **Board viewer:** renders the board, buildings, robber, and the recorder's hand at any turn; step forward and back through the game | 1 |
 | UI-04 | **Opening placement review / practice:** the board with candidate placements ranked, plus an explanation of each | 1 |
 | UI-05 | **Move-by-move review:** win-probability graph over the game, per-move grade, the bot's best alternative, keyboard navigation | 2 |
-| UI-06 | **Practice table:** the user against three bots in a 4-player game; difficulty selection; build, trade, robber and development card actions | 2 |
+| UI-06 | **Practice table:** the user against three bots in a 4-player game; difficulty selection; bot play style selection and bot plan labels (Phase 3); build, trade, robber and development card actions | 2 |
 | UI-07 | **Account pages:** sign up, log in, history of recordings, reviews and sessions | 2 |
 | UI-08 | **What-if explorer:** branch from any turn, try a different move, then either play the branch against bots [PROPOSED] or simulate it and compare branches side by side | 3 |
 | UI-09 | **Habits dashboard and Arena leaderboard** | 3 |
@@ -448,6 +565,7 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
   - Record WebSocket and HTTP game messages.
   - Remove credentials from URLs.
   - Mark any gap caused by an unexpected stop.
+  - [PROPOSED] When the user rejoins a game after a crash, start a new recording and link it to the interrupted one.
 - **Outputs:** A JSON export file and a status badge.
 - **Done when:** A full recorded game matches what was on screen from setup to the end.
 
@@ -459,6 +577,7 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
   - Check the size limit and the schema version.
   - Check that the recording contains the game start and a game state.
   - Detect gap markers.
+  - [PROPOSED] Rebuild missing turns from the game log in the linked recording, then check that the rebuilt turns produce the board state recorded after the gap. Mark rebuilt turns as reconstructed. [OPEN] I-20.
 - **Outputs:** Either an accepted recording or an error message ("This file can't be read", "Recording is missing the start of the game", "Recording has gaps; only complete sections will be reviewed").
 
 #### FR-03 Replay a Recorded Game in the Engine *(Phase 1)*
@@ -514,7 +633,9 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
   - Simulate plausible opponent placements before the user's next placement.
   - Evaluate how the user's two settlements work together, considering production, resource variety, ports, and room to expand.
   - Use only information available at the decision being reviewed. Later recorded placements must not be treated as known when evaluating an earlier choice.
-- **Outputs:** Ranked candidates, estimated win probabilities, likely follow-up placements, and plain-language explanations of strengths and risks. Show an "about equal" notice when results are too close to call.
+- **Outputs:** Ranked candidates, estimated win probabilities, likely follow-up placements, and plain-language explanations of strengths and risks.
+  - Explanations account for the user's seat. For an early seat, note when the spots that pair well with a candidate are likely to be taken before the user's second placement (e.g. *"Strongest first spot, but its ore/wheat partners will likely be gone by your second pick. Expect a wood/brick game."*). For Seat 4, judge the two settlements as a pair (e.g. *"Neither is the best spot left, but together they cover all five resources."*).
+  - Show an "about equal" notice when results are too close to call.
 - **Done when:** Reviewing a standard board takes 30 seconds or less (NFR-02), accounts for snake placement order, and returns rankings and explanations in the format the UI expects.
 
 #### FR-08 Move-by-Move Review *(Phase 2)*
@@ -529,7 +650,7 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 #### FR-09 Practice Mode *(Phase 2)*
 
 - **Purpose:** Let the user spar against bots.
-- **Inputs:** Difficulty selection and the user's moves.
+- **Inputs:** Difficulty selection, a play style for each bot (Phase 3, FR-18), and the user's moves.
 - **Processing:**
   - Run a 4-player game of the user against three bots, with bot turns streamed over the WebSocket.
   - Includes player-to-player trades between the user and the bots.
@@ -609,6 +730,26 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 - **Processing:**
   - Combine grades by decision type.
 - **Outputs:** The top recurring habits (e.g. "you hold development cards too long"), shown only after a minimum number of games. [OPEN] I-17: the minimum number.
+
+#### FR-18 Bot Play Styles *(Phase 3)*
+
+- **Purpose:** Give practice opponents distinct, realistic table behavior. A play style sets how a bot plays with other players. It does not set the bot's game plan, which depends on the board and on its seat in the snake placement order.
+- **Inputs:** A play style for each bot, and the game events that affect it (robber placements, steals, knights, blocking roads or settlements, refused trades).
+- **Processing:**
+  - Each bot plays the strongest plan for its starting position (e.g. ore/wheat/sheep, wood/brick, ports and trading, or balanced) and reports that plan for the board label.
+  - The play style adjusts a small set of parameters on top of the same bot: how readily it trades and how hard it bargains, how it weighs robber targets (the leader vs. players it holds a grudge against), how long a grudge lasts, and how much randomness it adds to its choices.
+  - [PROPOSED] Initial play styles:
+
+    | Play style | Behavior |
+    | --- | --- |
+    | Grudge-holder | Remembers who robbed, blocked, or knighted it and targets that player with the robber, blocks, and refused trades |
+    | Wild card | Adds randomness to placements and trades, so it is harder to predict |
+    | Table balancer | Robs and refuses trades with whoever is leading |
+    | Hard trader | Trades often and asks for favorable rates |
+    | Hoarder | Rarely trades with other players and prefers bank and port trades |
+
+- **Outputs:** Bot moves and trade responses that reflect the chosen play style, and a plan label for each bot after setup.
+- **Done when:** Over a fixed set of seeded games, each play style shows its behavior compared with a neutral bot of the same difficulty (e.g. a Grudge-holder robs the player who blocked it more often). [OPEN] I-21: which play styles ship first.
 
 ### 3.3 Performance Requirements
 
@@ -701,3 +842,5 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 | I-16 | Login method for Phase 2 accounts | Open |
 | I-17 | Minimum games before showing habit diagnostics | Open |
 | I-19 | Database choice for Phase 2: PostgreSQL or SQLite | Open |
+| I-20 | Does Colonist re-send the full game log on reconnect, so missing turns can be rebuilt after a crash? | Open |
+| I-21 | Which bot play styles ship first (FR-18) | Open |
