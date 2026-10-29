@@ -63,14 +63,12 @@ The platform targets **base-game, 4-player Catan only**, and includes **player-t
 - **Decision & Blunder Analysis:** The player inspects key turning points, viewing move-by-move shifts in estimated win probabilities and plain-language explanations of strategic inaccuracies.
 - **Targeted Sparring:** The player transitions into a sandbox environment powered by the Game Engine (UI-06) to replay crucial game states or test alternative strategies from any point in the game against calibrated AI bot archetypes.
 
-**Phase 1 (Quarter 1): Walking Skeleton / Core Prototype**
+**Phase 1: Core Prototype**
 
-- **The Collector (Chrome Extension):** A read-only extension for Chromium-based browsers. It records game events and turn actions from the user's own Colonist.io session and exports serialized match files. *(Built.)*
-- **Game Engine (Core):** A custom, headless implementation of base 4-player Catan rules, including player-to-player trading. It handles board topology, legal action validation and turn progression. It can replay recordings exported by the Collector (see FR-03 for what "replay" can guarantee under hidden information).
-- **Initial Bot Implementations:** First working versions of the bot approaches under comparison, behind a common bot interface. They are benchmarked against a random baseline. **[OPEN] I-5:** which of the four approaches must be running by the end of Q1.
-- **Opening Placement Reviewer:** The user picks opening settlements, and the bot simulates games from there to judge whether the opening was good or bad.
-- **Initial Review UI:** A web client for uploading game files, rendering the board, and auditing setup placements.
-- **Team Data Logging:** The team records every Colonist game it plays, to seed the human game dataset.
+- **Session Recording (FR-01, UI-01):** The user records their live Colonist.io match via a read-only browser extension, observing active recording badges (REC, PAUSE, ERR) and downloading the session export. *(Built.)*
+- **Match Ingestion & Board Replay (FR-02, FR-03, UI-02, UI-03):** The user drags and drops a recorded session into the web app. The system alerts the user to missing turns or corruption, and renders the turn-by-turn board state, dice rolls, and public card counts.
+- **Imperfect Information Filtering (FR-05):** The user is assured an authentic review; opponent hidden hands and unplayed development cards are masked from analysis routines to prevent unrealistic omniscient evaluation.
+- **Opening Placement Reviewer (FR-07, UI-04):** The user inspects their opening settlements and roads. The system ranks legal candidate locations, highlights resource starvation risks, scores port synergies, and explains why specific locations were strategically superior.
 
 
 [OPEN] I-5: Phase 1 may be overloaded. The Game Engine and the bots are the Q1 priority. The Opening Reviewer, Review UI and job queue may move to Phase 2.
@@ -758,7 +756,7 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 | NFR-02 | Opening placement review completes within **30 s** on a developer laptop. |
 | NFR-03 | A full game review completes in the background within **10 min**. |
 | NFR-04 | Engine throughput is measured in Phase 1 (random 4-player games per second on one core). A target is then set to support self-play. Hot paths move to Rust/C if the target is missed (I-6). |
-| NFR-05 | API requests that don't start a job respond within **500 ms**. Anything over **100 ms** of computation is queued (Section 2.7). |
+| NFR-05 | API requests that do not start a job respond within **500 ms**. Anything over **100 ms** of computation is queued (Section 2.7). |
 | NFR-06 | The system supports about **10 concurrent users** (team and testers). |
 | NFR-07 | Upload limit: [OPEN] set from the size of real exports. |
 
