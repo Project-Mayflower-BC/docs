@@ -6,7 +6,7 @@
 | **Status** | Draft |
 | **Team** | Mayflower |
 | **Authors** | Noah Levine, Caleb Weisgerber, Ryan Massenburg, Emmett Oliver |
-| **Last Updated** | 10/28/2026 |
+| **Last Updated** | 10/30/2026 |
 
 > **Reading this draft:** Items marked **[OPEN]** still need a team decision and are tracked in [Appendix B](#appendix-b-issues-list). Items marked **[PROPOSED]** are suggested defaults that need confirmation. Remove both markers once they are agreed.
 
@@ -14,14 +14,10 @@
 
 The full revision history is tracked in the GitHub commit history.
 
-**Last updated 10/28/2026** (Emmett Oliver, Caleb Weisgerber)
+**Last updated 10/30/2026** (Emmett Oliver)
 
-- Added User Scenario 2 (practice match against bots) and User Scenario 3 (habits across games).
-- Reframed User Scenario 1 as reviewing any recorded game, with what-if branching in the main flow.
-- Added crash recovery: resume recording on rejoin and rebuild missing turns from the game log (FR-01, FR-02, I-20).
-- Replaced fixed bot strategies with board-driven game plans plus selectable bot play styles (FR-18, I-21).
-- Made opening review explanations account for the user's seat in snake order (FR-07), and added a Seat 4 practice path to User Scenario 2.
-- Fixed a Catan rules error and the minimum-games conflict (I-17) in User Scenario 3.
+- Revised section 1.2 in accordance with in-class feedback and new Nov 3 assignment.
+- Moved Opening Placement Reviewer to Phase 2 in light of current state of progress.
 
 ## Table of Contents
 
@@ -59,46 +55,42 @@ Project Mayflower works as a post-game review suite and a sparring engine:
 
 The platform targets **base-game, 4-player Catan only**, and includes **player-to-player trading**, even though other players' cards are hidden.
 
-The project has a research component as well as the product. It compares four bot approaches under identical rules and time limits:
-- AlphaBeta search;
-- Monte Carlo Tree Search (MCTS);
-- AlphaZero-style search (MCTS guided by a neural network);
-- Proximal Policy Optimization (PPO) reinforcement learning.
-
 #### In scope
 
-**Phase 1 (Quarter 1): Walking Skeleton / Core Prototype**
+**Core User Scenario:**
 
-- **The Collector (Chrome Extension):** A read-only extension for Chromium-based browsers. It records game events and turn actions from the user's own Colonist.io session and exports serialized match files. *(Built.)*
-- **Game Engine (Core):** A custom, headless implementation of base 4-player Catan rules, including player-to-player trading. It handles board topology, legal action validation and turn progression. It can replay recordings exported by the Collector (see FR-03 for what "replay" can guarantee under hidden information).
-- **Initial Bot Implementations:** First working versions of the bot approaches under comparison, behind a common bot interface. They are benchmarked against a random baseline. **[OPEN] I-5:** which of the four approaches must be running by the end of Q1.
-- **Opening Placement Reviewer:** The user picks opening settlements, and the bot simulates games from there to judge whether the opening was good or bad.
-- **Initial Review UI:** A web client for uploading game files, rendering the board, and auditing setup placements.
-- **Team Data Logging:** The team records every Colonist game it plays, to seed the human game dataset.
+- **Match Recording & Ingestion:** The user captures a standard 4-player Colonist.io match via the read-only extension for Chromium-based browsers (UI-01) and uploads the session export to the web application (UI-02).
+- **Setup Evaluation:** The platform uses the Game Engine to replay the opening phase, ranking initial settlements and road trajectories against candidate options based on production potential, resource balance, and port synergies (see FR-03 for what "replay" can guarantee under hidden information).
+- **Decision & Blunder Analysis:** The player inspects key turning points, viewing move-by-move shifts in estimated win probabilities and plain-language explanations of strategic inaccuracies.
+- **Targeted Sparring:** The player transitions into a sandbox environment powered by the Game Engine (UI-06) to replay crucial game states or test alternative strategies from any point in the game against calibrated AI bot archetypes.
+
+**Phase 1: Core Prototype**
+
+- **Session Recording (FR-01, UI-01):** The user records their live Colonist.io match via a read-only browser extension, observing active recording badges (REC, PAUSE, ERR) and downloading the session export. *(Built.)*
+- **Match Ingestion & Board Replay (FR-02, FR-03, UI-02, UI-03):** The user drags and drops a recorded session into the web app. The system alerts the user to missing turns or corruption, and renders the turn-by-turn board state, dice rolls, and public card counts.
+- **Imperfect Information Filtering (FR-05):** The user is assured an authentic review; opponent hidden hands and unplayed development cards are masked from analysis routines to prevent unrealistic omniscient evaluation.
+- **Bot Evaluation Foundation & Standardized Benchmarks (FR-06):** Delivers the common bot execution interface along with an initial random baseline and benchmark bot implementation executing within turn time limits. This satisfies the user's need for objective, automated move assessments in the Opening Placement Review, while establishing the core AI architecture required for the full 4-Player Sparring Mode and Move-by-Move Review (Phase 2, FR-7, FR-08, FR-09).
+
 
 [OPEN] I-5: Phase 1 may be overloaded. The Game Engine and the bots are the Q1 priority. The Opening Reviewer, Review UI and job queue may move to Phase 2.
 
 **Phase 2: Minimum Viable Product**
 
-- **Asynchronous Job Dispatch:** A task queue that spreads simulation rollouts across background worker processes without slowing the UI.
-- **Post-Placement Diagnostic & Blunder Review:** Automated comparison of candidate placements, showing changes in win probability and the risk of being starved of resources.
-- **Full Move-by-Move Review:** Automated grading of mid-game decisions: builds, robber moves, knight and development card plays, and trades.
-- **First Learning & Self-Play Bot:** Self-play training that produces synthetic game datasets to supplement human recordings.
-- **4-Player Sparring / Practice Mode:** The user plays complete 4-player games against three bots.
-- **Basic Trade Utility & Leader-Threat Model:** Scores a trade offer by its value to the player, weighed against how much it advances the table leader.
-- **Real-Player Testing on Colonist:** Team members play Colonist games, making the moves the bot suggests, to measure how it performs against real people. The bot never plays on Colonist by itself.
-- **Persistence & Account Layer:** Database storing user accounts, uploaded recordings, review reports, and practice session histories. *(No accounts or user data in Phase 1.)*
-- **Statistical Calibration Audit:** Checks whether predicted win probabilities match observed outcomes across real and simulated matches.
+- **Opening Placement Reviewer (FR-07, UI-04):** The user inspects their opening settlements and roads. The system ranks legal candidate locations, highlights resource starvation risks, scores port synergies, and explains why specific locations were strategically superior.
+- **Move-by-Move Review (FR-08, UI-05):** The user steps through their match using keyboard arrow keys or timeline scrubbing. The interface charts an interactive win-probability graph, assigns qualitative grades to decisions, shows risks of being starved of resources, and flags counterproductive moves such as feeding the table leader.
+- **Basic Trade Utility & Leader-Threat Model:** The user sees scores per trade offer based on its value to the player and weighed against how much it advances the table leader.
+- **Variance-Aware Grading & Calibration (FR-13):** When two moves have near-identical outcomes, the user sees an "About Equal" badge explaining that the difference is within normal dice variance.
+- **4-Player Sparring Mode (FR-09, UI-06):** The user plays complete 4-player games against three bots.
+- **Responsive Background Processing (NFR-02, NFR-03, NFR-05):** The user experiences an unblocked, responsive web client with real-time progress indicators while computational rollouts run asynchronously.
+- **Account History & Session Tracking (FR-12, UI-07):** The user creates an account to save practice matches, access past reviews, and track learning progress over time.
 
 **Phase 3: Extensions / Advanced Capabilities**
 
-- **What-If Branching:** Freezes the game at any turn so the user can try different moves and compare simulated outcomes branch by branch (like Git branches for a Catan game).
-- **Structured Table-Talk & Persuasion Engine:** Game-state-grounded message intents that let a bot propose trades, point out the table leader, or stay quiet (avoid unwanted attention).
-- **Configurable Bot Play Styles:** The user picks how each bot plays with other players: how it trades, whom it targets, whether it holds grudges, and how predictable it is. Each bot's game plan (e.g. ore/wheat/sheep, wood/brick, ports and trading) comes from its board position and seat.
-- **The Arena:** Automated bot-vs-bot tournaments with Elo ratings, including benchmarks against external bots.
-- **Bot Comparison Write-Up:** A report comparing the four bot approaches, based on Arena results.
-- **Habit Diagnostics:** Looks across a user's games to find mistakes they keep making.
-- **Cloud Worker Deployment & Scaled Storage:** Cloud worker nodes and object storage for historical game records and model checkpoints.
+- **What-If Branching (FR-14, UI-08):** The user freezes the game at any turn and can try different moves and compare simulated outcomes branch by branch (like Git branches for a Catan game).
+- **Structured Table-Talk & Persuasion:** The user practices negotiation with bot opponents who provide game-state-grounded messages to propose trades, point out the table leader, or stay quiet (avoid unwanted attention).
+- **Configurable Bot Play Styles:** The user picks and practices against bots with different play styles: how it trades, whom it targets, whether it holds grudges, and how predictable it is. Each bot's game plan (e.g. ore/wheat/sheep, wood/brick, ports and trading) comes from its board position and seat.
+- **The Arena:** The user views automated bot-vs-bot tournaments with Elo ratings, including benchmarks against external bots.
+- **Cloud Scaled Storage (NFR-06):** The user experiences rapid review turnarounds backed by cloud architecture and reliable storage for historical game archives.
 
 #### Out of scope
 
@@ -761,7 +753,7 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 | NFR-02 | Opening placement review completes within **30 s** on a developer laptop. |
 | NFR-03 | A full game review completes in the background within **10 min**. |
 | NFR-04 | Engine throughput is measured in Phase 1 (random 4-player games per second on one core). A target is then set to support self-play. Hot paths move to Rust/C if the target is missed (I-6). |
-| NFR-05 | API requests that don't start a job respond within **500 ms**. Anything over **100 ms** of computation is queued (Section 2.7). |
+| NFR-05 | API requests that do not start a job respond within **500 ms**. Anything over **100 ms** of computation is queued (Section 2.7). |
 | NFR-06 | The system supports about **10 concurrent users** (team and testers). |
 | NFR-07 | Upload limit: [OPEN] set from the size of real exports. |
 
@@ -844,3 +836,4 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 | I-19 | Database choice for Phase 2: PostgreSQL or SQLite | Open |
 | I-20 | Does Colonist re-send the full game log on reconnect, so missing turns can be rebuilt after a crash? | Open |
 | I-21 | Which bot play styles ship first (FR-18) | Open |
+| I-22 | Where does Bot Comparison Write-Up fit into a user scenario? Is this an additional scenario or part of an existing one? | Resolved: for team/showcase |
