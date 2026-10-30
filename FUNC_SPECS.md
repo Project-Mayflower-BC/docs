@@ -6,7 +6,7 @@
 | **Status** | Draft |
 | **Team** | Mayflower |
 | **Authors** | Noah Levine, Caleb Weisgerber, Ryan Massenburg, Emmett Oliver |
-| **Last Updated** | 10/29/2026 |
+| **Last Updated** | 10/30/2026 |
 
 > **Reading this draft:** Items marked **[OPEN]** still need a team decision and are tracked in [Appendix B](#appendix-b-issues-list). Items marked **[PROPOSED]** are suggested defaults that need confirmation. Remove both markers once they are agreed.
 
@@ -14,7 +14,7 @@
 
 The full revision history is tracked in the GitHub commit history.
 
-**Last updated 10/29/2026** (Emmett Oliver)
+**Last updated 10/30/2026** (Emmett Oliver)
 
 - Revised section 1.2 in accordance with in-class feedback and new Nov 3 assignment.
 - Moved Opening Placement Reviewer to Phase 2 in light of current state of progress.
