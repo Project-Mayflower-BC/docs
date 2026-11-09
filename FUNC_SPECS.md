@@ -371,7 +371,7 @@ flowchart TD
 | Capture | Record your own Colonist games and export them as JSON | 1 (built) |
 | Engine | Base 4-player rules, player trading, hidden-information views, replay of recordings | 1 |
 | Bots | Common bot interface; AlphaBeta, MCTS, AlphaZero-style and PPO implementations | 1–2 |
-| Opening Review | Rank initial placements and explain why | 1 |
+| Opening Review | Rank initial placements and explain why | 2 |
 | Move Review | Grade every decision by change in win probability compared with the bot's best move | 2 |
 | Practice | Play a full 4-player game against three bots at selectable difficulty | 2 |
 | Trade Valuation | Score a trade against the table leader's progress | 2 |
@@ -408,10 +408,6 @@ Detailed requirements are in Section 3.2.
 
 - **Collector:** Chromium-based desktop browsers (Chrome 118+, Brave). The extension uses Manifest V3 and the `chrome.debugger` API, so Firefox and Safari are not supported. It was developed mainly in Brave. [OPEN] I-10: verify it works in Google Chrome and Edge.
 - **Web client:** Current desktop Chromium browsers, served by **nginx**.
-- **Backend:**
-  - Python **3.11** (Game Engine, bots, training, API).
-  - **PyTorch with CUDA** for learning bots.
-  - Speed-critical engine code may later be rewritten in Rust or C (see I-6).
 - **Containers:** Docker Desktop with Docker Compose on every developer machine.
 - **Developer hardware:** Consumer laptops/desktops (4–8 CPU cores, 8–16 GB RAM).
 - **Training hardware:**
@@ -424,7 +420,7 @@ Detailed requirements are in Section 3.2.
 
 **Constraints**
 - **Budget:** Train on personal hardware to keep costs low. If that is too slow, use Google Colab or another cheap cloud option.
-- **Timeline:** Three quarters. Quarter one team reflections on Oct 23, Nov 13, and Dec 4.
+- **Timeline:** Three quarters.
 - **Team:** Four developers. [OPEN] I-15: ownership of Engine, Bots/Training, API/Web, Collector, and Docs.
 
 **Assumptions**
@@ -455,14 +451,11 @@ These are the technical, budget, and course rules the design has to follow.
   - Simulated games must be reproducible from an explicit random seed, for regression testing in CI/CD.
   - Replays of Collector recordings must use the **dice results recorded in the game**, not a seed, because Colonist's random number generator is not ours.
 - **Information set support:** The engine must separate public board data from hidden opponent hands. Opponent hands appear in recordings only as card counts, and robberies between two opponents are hidden. Bots and replays must therefore reason over possible hands rather than assume they know them.
-- **Performance path:** The engine is written in Python first. Profiled hot paths may later be rewritten in Rust or C, and batched simulation or neural-network work may move to CUDA (I-6).
 
 
 **Asynchronous Compute & Task Architecture**
 
 - **Non-blocking analysis:** Heavy work (move evaluations, rollouts, and self-play training matches) must never run inside a web API request. Any work over 100 ms must go through the task queue to background workers.
-- **Stateless workers:** Workers must be stateless. Each job ticket is self-contained, specifying the board, turn actions, candidate moves, and seed values.
-- **Persistence isolation:** Intermediate rollout steps stay in memory. Workers write aggregated metrics and reports to storage only when a batch or turn review finishes, to avoid database lock contention.
 
 **Hardware, Compute Budget & Scaling**
 
