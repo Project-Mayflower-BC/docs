@@ -26,15 +26,26 @@
 
 ## 5\. Detailed Component Designs (Detailed Design)
 
-### 5.1 \[Component Name 1\]
+### 5.1 \[The Collector (Client-side recording extension)\]
 
 #### *5.1.1 Overview*
 
-*\[Provide an overview of the component, including its purpose, responsibilities, and interfaces.\]*
+- *Purpose:* A read-only Chromium browser extension that passively captures live Settlers of Catan matches played on Colonist.io.
+
+- *Responsibilities:*
+    - Attaches to the active Colonist tab via the Chrome Debugger API upon user initiation.
+    - Passively monitors incoming/outgoing WebSocket frames and HTTP payloads representing game topology, dice events, building placements, public chat, and player trade transactions.
+    - Sanitizes and strips personal credentials, auth tokens, and sensitive query strings.
+    - Detects stream breaks, flagging gap markers when packet loss or browser disconnects occur.
+    - Serializes and exports the validated session as a JSON to the user's local disk.
+
+- *Interfaces:*
+    - *Upstream:* Chrome Debugger / Network domain protocol events.
+    - *Downstream:* Browser local download manager / Web App File Upload (UI-02).
 
 #### *5.1.2 Design Considerations*
-
-*\[Discuss the design considerations and constraints for the component.\]*
+- *Zero-Interference Mandate:* Operates strictly in passive capture mode; never injects scripts into game memory, modifies DOM buttons, or interacts with Colonist servers.
+- *Reconnection Handling:* If the tab crashes or disconnects mid-match, the collector creates an explicit gap marker. Upon reconnect, it links new events to the parent session to preserve data continuity.
 
 #### *5.1.3 Class Diagram*
 
@@ -44,7 +55,39 @@
 
 *\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
 
-### 5.2 \[Component Name 2\]
+
+### 5.1 \[Game Engine\]
+
+
+### 5.3 \[Web Client & Visualization Platform\]
+
+
+### 5.4 \[Background Simulation & Worker Pipeline\]
+
+
+### 5.5 \[Review & Sparring Engine\]
+
+
+
+### 5.x \[Component Name x\]
+
+#### *5.x.1 Overview*
+
+*\[Provide an overview of the component, including its purpose, responsibilities, and interfaces.\]*
+
+#### *5.x.2 Design Considerations*
+
+*\[Discuss the design considerations and constraints for the component.\]*
+
+#### *5.x.3 Class Diagram*
+
+*\[Include a class diagram to illustrate the internal structure of the component, including classes, attributes, methods, and relationships.\]*
+
+#### *5.x.4 Sequence Diagrams*
+
+*\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
+
+### 5.x \[Component Name x\]
 
 *\[(Repeat the same structure for each component)\]*
 
