@@ -30,22 +30,22 @@
 
 #### *5.1.1 Overview*
 
-- *Purpose:* A read-only Chromium browser extension that passively captures live Settlers of Catan matches played on Colonist.io.
+- **Purpose:** A read-only Chromium browser extension that passively captures live Settlers of Catan matches played on Colonist.io.
 
-- *Responsibilities:*
+- **Responsibilities:**
     - Attaches to the active Colonist tab via the Chrome Debugger API upon user initiation.
     - Passively monitors incoming/outgoing WebSocket frames and HTTP payloads representing game topology, dice events, building placements, public chat, and player trade transactions.
     - Sanitizes and strips personal credentials, auth tokens, and sensitive query strings.
     - Detects stream breaks, flagging gap markers when packet loss or browser disconnects occur.
     - Serializes and exports the validated session as a JSON to the user's local disk.
 
-- *Interfaces:*
+- **Interfaces:**
     - *Upstream:* Chrome Debugger / Network domain protocol events.
     - *Downstream:* Browser local download manager / Web App File Upload (UI-02).
 
 #### *5.1.2 Design Considerations*
-- *Zero-Interference Mandate:* Operates strictly in passive capture mode; never injects scripts into game memory, modifies DOM buttons, or interacts with Colonist servers.
-- *Reconnection Handling:* If the tab crashes or disconnects mid-match, the collector creates an explicit gap marker. Upon reconnect, it links new events to the parent session to preserve data continuity.
+- **Zero-Interference Mandate:** Operates strictly in passive capture mode; never injects scripts into game memory, modifies DOM buttons, or interacts with Colonist servers.
+- **Reconnection Handling:** If the tab crashes or disconnects mid-match, the collector creates an explicit gap marker. Upon reconnect, it links new events to the parent session to preserve data continuity.
 
 #### *5.1.3 Class Diagram*
 
@@ -56,7 +56,33 @@
 *\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
 
 
-### 5.1 \[Game Engine\]
+### 5.2 \[Game Engine\]
+
+#### *5.2.1 Overview*
+
+- **Purpose:** A custom, deterministic headless rules engine implementing official base 4-player Settlers of Catan mechanics without dependencies on third-party game libraries.
+
+- **Responsibilities:**
+    - Maintains the canonical authoritative board graph (19 hexes, 54 vertices, 72 edges, harbors, and robber positions).
+    - Generates legal candidate actions for any game state (settlement/city placement distance rules, connected road chains, maritime trades, dev card play limits).
+    - Executes actions deterministically given explicit random seeds or historic dice rolls.
+    - Derives player-specific Hidden-Information Views (FR-05) by stripping opponent hand contents and unplayed development cards.
+
+- **Interfaces:**
+    - *Input:* `apply_action(state, action)`, `replay_session(json_payload)`.
+    - *Output:* `get_legal_actions(state) -> List[Action]`, `get_player_view(state, seat_id) -> PlayerView`.
+
+#### *5.2.2 Design Considerations*
+- **Speed & State Copying:** Rollouts require executing hundreds of simulated games per second; state representations prioritize shallow-copy efficiency or bitboard representations to eliminate object creation overhead.
+- **Historic Replay vs. Simulation:** Replaying uploaded Colonist games uses the recorded dice rolls directly, whereas Monte Carlo rollouts simulate dice using pseudo-random generators.
+
+#### *5.2.3 Class Diagram*
+
+*\[Include a class diagram to illustrate the internal structure of the component, including classes, attributes, methods, and relationships.\]*
+
+#### *5.2.4 Sequence Diagrams*
+
+*\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
 
 
 ### 5.3 \[Web Client & Visualization Platform\]
