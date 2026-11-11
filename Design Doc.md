@@ -142,6 +142,31 @@
 
 ### 5.5 \[Review & Sparring Engine\]
 
+#### *5.5.1 Overview*
+- **Purpose:** A strategic intelligence layer responsible for generating move assessments, ranking setup choices, and executing automated bot decisions.
+
+- **Responsibilities:**
+    - Enforces the common bot execution interface: `choose_move(view, time_limit)` and `win_probability(view)` across all bot architectures.
+    - Computes Expected Value shifts ($\Delta\text{EV}$) to identify blunders and generate plain-language advice.
+    - Executes opening placement audits (FR-07) assessing total production pips, port synergies, and resource starvation risks.
+    - Hosts the standardized agent pool including the random baseline and candidate bot models (AlphaBeta, MCTS, AlphaZero-style, and PPO).
+    - Powers rollout simulations in Phase 1 and the 4-player Practice Sparring table in Phase 2.
+
+- **Interfaces:**
+    - *Input:* Filtered `PlayerView` instances from the Engine.
+    - *Output:* Scored move candidates, win probability curves, and qualitative blunder tags.
+
+#### *5.5.2 Design Considerations*
+- **Imperfect Information Compliance:** Bot decision logic can only access sanitized `PlayerView` data; omniscient peeking at unrevealed opponent cards is blocked at the interface level.
+- **Variance Isolation ("About Equal" Threshold):** Evaluator applies statistical confidence intervals so moves with minor EV differences within dice roll variance are not falsely identified as blunders.
+
+#### *5.5.3 Class Diagram*
+
+*\[Include a class diagram to illustrate the internal structure of the component, including classes, attributes, methods, and relationships.\]*
+
+#### *5.5.4 Sequence Diagrams*
+
+*\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
 
 
 ### 5.x \[Component Name x\]
@@ -162,9 +187,6 @@
 
 *\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
 
-### 5.x \[Component Name x\]
-
-*\[(Repeat the same structure for each component)\]*
 
 ## 6\. Data Model (Detailed Design)
 
