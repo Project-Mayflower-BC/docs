@@ -534,7 +534,7 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 - **Purpose:** Reject bad files before they reach the engine.
 - **Inputs:** An uploaded JSON file.
 - **Processing:**
-- Verify the file matches supported format and contains the game start and a game state.
+  - Verify the file matches supported format and contains the game start and a game state.
   - Scan for gaps, prompting the user if only a partial review is possible.
   - [PROPOSED] Rebuild missing turns from the game log in the linked recording, then check that the rebuilt turns produce the board state recorded after the gap. Mark rebuilt turns as reconstructed. [OPEN] I-20.
 - **Outputs:** Either an accepted recording or an error message ("This file can't be read", "Recording is missing the start of the game", "Recording has gaps; only complete sections will be reviewed").
@@ -615,7 +615,7 @@ Each requirement follows this template: **Purpose / Inputs / Processing / Output
 - **Processing:**
   - Run a 4-player game of the user against three bots.
   - Include player-to-player trades between the user and the bots.
-- Save the completed match to the user's session history for post-game review.
+  - Save the completed match to the user's session history for post-game review.
 - **Outputs:** A complete game, saved as a practice session (with accounts, Phase 2) and available for review.
 
 #### FR-10 Trade Valuation *(Phase 2)*
