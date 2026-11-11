@@ -113,7 +113,31 @@
 *\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
 
 
-### 5.4 \[Background Simulation & Worker Pipeline\]
+### 5.4 \[Asynchronous Job Dispatch & Worker Queue\]
+
+#### *5.4.1 Overview*
+- **Purpose:** A distributed background compute pipeline that processes resource-intensive simulation tasks without blocking the web server.
+
+- **Responsibilities:**
+    - Accepts review evaluation requests from the API layer and pushes standardized job tickets to a message broker.
+    - Coordinates worker nodes running rollout tasks across multiple CPU cores.
+    - Persists completed evaluation summaries to the database and signals completion to the client.
+
+- **Interfaces:**
+    - *Broker Interface:* Redis queue / Celery task runner.
+    - *Persistence Interface:* PostgreSQL database connection for writing completed review summaries.
+
+#### *5.4.2 Design Considerations*
+- **Budget & Local-First:** Must execute cleanly on local developer machines via Docker Compose at no cloud cost during early phases, scaling to distributed cloud workers in Phase 3.
+- **Task Timeout Protection:** Strict timeout thresholds (e.g. ≤ 30s for opening review, ≤ 10m for full match review) prevent rogue simulations from starving the worker pool.
+
+#### *5.4.3 Class Diagram*
+
+*\[Include a class diagram to illustrate the internal structure of the component, including classes, attributes, methods, and relationships.\]*
+
+#### *5.4.4 Sequence Diagrams*
+
+*\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
 
 
 ### 5.5 \[Review & Sparring Engine\]
