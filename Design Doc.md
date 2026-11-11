@@ -87,6 +87,31 @@
 
 ### 5.3 \[Web Client & Visualization Platform\]
 
+#### *5.3.1 Overview*
+- **Purpose:** A responsive single-page web application providing file upload handling, visual 2D board playback, evaluation graphs, and practice sparring controls.
+
+- **Responsibilities:**
+    - Provides file ingestion interfaces (UI-02) with client-side schema pre-validation.
+    - Renders an interactive SVG/HTML5 Canvas board displaying hex terrains, dice chits, settlements, roads, cities, and the robber.
+    - Visualizes review analytics: win-probability line charts, move grading badges (Best, Mistake, Blunder), resource starvation alerts, and trade utility explanations (UI-04, UI-05).
+    - Houses the Practice Table (UI-06) for live sparring matches against bot opponents.
+
+- **Interfaces:**
+    - REST API client communicating with backend endpoints (`/api/v1/sessions`, `/api/v1/reviews`).
+    - WebSocket client receiving real-time bot moves during practice sparring.
+
+#### *5.3.2 Design Considerations*
+- **No-Freeze Rendering:** Playback scrubbing and timeline navigation must execute entirely on the client without firing network requests once the review payload is loaded
+- **Asynchronous Job Feedback:** Polling / WebSocket event handlers keep the UI updated with background simulation progress.
+
+#### *5.3.3 Class Diagram*
+
+*\[Include a class diagram to illustrate the internal structure of the component, including classes, attributes, methods, and relationships.\]*
+
+#### *5.3.4 Sequence Diagrams*
+
+*\[Include sequence diagrams to depict the interactions between the component and other system components or external entities.\]*
+
 
 ### 5.4 \[Background Simulation & Worker Pipeline\]
 
